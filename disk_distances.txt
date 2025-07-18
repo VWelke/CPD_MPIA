@@ -1,4 +1,4 @@
-# Copied from exoALMA X Table 1 
+# Copied from exoALMA IV Table 1 
 # disk_name, distance_pc
 AA_Tau,135
 CQ_Tau,149
