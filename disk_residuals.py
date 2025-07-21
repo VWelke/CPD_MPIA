@@ -14,6 +14,11 @@ import matplotlib.pyplot as plt
 
 
 class DiskResiduals:
+
+    #---------------------
+    # Initialization
+    #---------------------
+
     def __init__(self, name, path, geom_file):
         """
         Initializes a DiskResiduals object for one disk.
@@ -28,6 +33,10 @@ class DiskResiduals:
         self.residuals = {}  # Dict to store {Briggs index value: FITS data}
         self.clean_images = {}   # Dict to store {Briggs index value: FITS data} for CLEAN images
         self.clean_profile = None  # Dict to store {Briggs index value: profile data}, currently None
+
+    #---------------------
+    # Data Loading Methods
+    #---------------------
 
     def _load_geometry(self, filepath):
         """
@@ -57,52 +66,10 @@ class DiskResiduals:
         Width(au), Width(arcsec), Gap_depth, R_in(au), R_in(arcsec), R_out(au), R_out(arcsec)
         """
         arr = np.loadtxt(ringgap_path, comments="#")
-    
+        
+
         # If the array is 1D, convert it to 2D with one row so we can index it consistently
-        if arr.ndim == 1:        # ...existing code...
-        
-        if hasattr(self, "ringgap") and self.ringgap is not None and self.ringgap.size > 0:
-            ringgap_arr = self.ringgap 
-        
-            # If ringgap_arr is a 1D array, convert to 2D with one row 
-            if ringgap_arr.ndim == 1:     
-                ringgap_arr = ringgap_arr[np.newaxis, :]
-        
-            # Flags to track if labels have been added
-            gap_label_added = False
-            ring_label_added = False
-        
-            # Each row: [Radial_location(au), Radial_location(arcsec), Flag(0=gaps,1=rings), 
-            #           Width(au), Width(arcsec), Gap_depth, R_in(au), R_in(arcsec), R_out(au), R_out(arcsec)]
-            for row in ringgap_arr:  
-                # Extract data with clearer variable names
-                rad_au = row[0]
-                rad_arcsec = row[1] 
-                flag = int(row[2])
-                width_au = row[3]
-                width_arcsec = row[4]
-                gap_depth = row[5]
-                
-                # Use the appropriate radius and width based on unit
-                if radius_unit == "au":
-                    rad = rad_au
-                    width = width_au if not np.isnan(width_au) else None
-                else:
-                    rad = rad_arcsec  
-                    width = width_arcsec if not np.isnan(width_arcsec) else None
-                                    
-                color = '#b9fbc0' if flag == 0 else '#cdb4fe'  # sage green for gaps, lavender for rings
-                
-                if flag == 0:
-                    label = 'Gap' if not gap_label_added else None
-                    gap_label_added = True
-                else:
-                    label = 'Ring' if not ring_label_added else None
-                    ring_label_added = True
-                    
-                ax.axvline(rad, color=color, linestyle=':', alpha=1.0, label=label)
-                if width is not None and width > 0:
-                    ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
+        if arr.ndim == 1:
             arr = arr[np.newaxis, :]
         
         # Store the full array for use in plot_profiles
@@ -155,6 +122,10 @@ class DiskResiduals:
         "intensity_Jy_sr": arr[:, 6],  # column 6 is intensity in Jy/sr
         "d_intensity_Jy_sr": arr[:, 7]
         }
+
+    #---------------------
+    # ImageCube Methods
+    #---------------------
 
     def get_cube(self, robust_val, FOV=10.0, cube_type="residual"):
         """
@@ -241,7 +212,10 @@ class DiskResiduals:
             ax.axvspan(R90 - err_low, R90 + err_high, color='k', alpha=0.15, label='R90 error')
 
 
-        # Plot bands for rings and gaps
+        # Band for rings and gaps
+        #
+
+
         if hasattr(self, "ringgap") and self.ringgap is not None and self.ringgap.size > 0:
             ringgap_arr = self.ringgap 
 
@@ -255,24 +229,25 @@ class DiskResiduals:
 
             # Each row is [Radial_location(au)	Radial_location(arcsec)	Flag(0 for gaps, 1 for rings)	Width(au)	Width(arcsec)	Gap_depth	R_in(au)	R_in(arcsec)	R_out(au)	R_out(arcsec)
             for row in ringgap_arr:  
-                rad = row[1] * gap_unit_factor
+                # Use data that's already in the correct units
+                if radius_unit == "au":
+                    rad = row[0]    # Column 0: radius in AU
+                    width = row[3] if not np.isnan(row[3]) else None  # Column 3: width in AU
+                else:
+                    rad = row[1]    # Column 1: radius in arcsec  
+                    width = row[4] if not np.isnan(row[4]) else None  # Column 4: width in arcsec
+
                 flag = int(row[2])
-                width = row[4] * gap_unit_factor if not np.isnan(row[4]) else None
-                                
+
                 color = '#b9fbc0' if flag == 0 else '#cdb4fe'  # sage green for gaps, lavender for rings
                 
-                # Ensure labels are added only once
                 if flag == 0:   #
-                    label = 'Gap' if not gap_label_added else None # if not gap_label_added: if gap_label_added is False
+                    label = 'Gap' if not gap_label_added else None
                     gap_label_added = True
                 else:
                     label = 'Ring' if not ring_label_added else None
                     ring_label_added = True
-
-
                 ax.axvline(rad, color=color, linestyle=':', alpha=1.0, label=label)
-
-                
                 if width is not None and width > 0:
                     ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
                 
@@ -285,6 +260,10 @@ class DiskResiduals:
         ax.set_title(f"{self.name} robust={robust_val}")
         plt.show()
     
+
+    #------------------------------
+    # Standard Deviation Methods
+    #------------------------------
 
     def create_sigma_mask(self, robust_val="1.0", scale_factor=1.0, save_fits=True):
         """
@@ -299,10 +278,13 @@ class DiskResiduals:
         - sigma_2d: 2D array with sigma values for each pixel
         - radial_profile: tuple (x, y, dy) from the radial profile
         """
+
         # Load the residual cube
         cube = self.get_cube(robust_val, cube_type="residual")
         
-        # Get radial profile with assume_correlated=False for standard deviation
+        # Get radial profile with assume_correlated=False 
+        # so that dy is simple the standard deviation per bin
+
         x, y, dy = cube.radial_profile(
             inc=self.inc, 
             PA=self.PA, 
@@ -310,8 +292,13 @@ class DiskResiduals:
             assume_correlated=False
         )
         
-        # Save radial profile to text file
-        profile_filename = f"{self.name}_residual_radial_profile_robust{robust_val}.txt"
+        # Save files locally in organized folders
+        output_base = "Disk_Residual_Profile"
+        disk_output_dir = os.path.join(output_base, self.name)
+        os.makedirs(disk_output_dir, exist_ok=True)
+        
+        profile_filename = os.path.join(disk_output_dir, f"{self.name}_residual_radial_profile_robust{robust_val}.txt")
+
         np.savetxt(
             profile_filename,
             np.column_stack([x, y, dy]),
@@ -321,6 +308,7 @@ class DiskResiduals:
         # Get 2D radius map
         rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
         
+
         # Get radial bin edges
         rbins, _ = cube.radial_sampling(rvals=x)
         
@@ -332,13 +320,17 @@ class DiskResiduals:
         for i in range(len(dy)):
             sigma_2d[bin_index == i] = dy[i] * scale_factor
         
-        # Save as FITS if requested
+        # Save as FITS if requested into another subfolder
+
+
         if save_fits:
             fits_filename = f"{self.name}_sigma_mask_robust{robust_val}.fits"
-            if scale_factor != 1.0:
+            if scale_factor != 1.0:   
                 fits_filename = f"{self.name}_sigma_mask_{scale_factor}sigma_robust{robust_val}.fits"
-            fits.writeto(fits_filename, sigma_2d, cube.header, overwrite=True)
-            print(f"Saved sigma mask: {fits_filename}")
+            
+            fits_path = os.path.join(disk_output_dir, fits_filename)   
+            fits.writeto(fits_path, sigma_2d, cube.header, overwrite=True)  # sigma_2d is 2D array, cube.header is the header from the residual cube
+            print(f"Saved sigma mask: {fits_path}")
         
         return sigma_2d, (x, y, dy)
 

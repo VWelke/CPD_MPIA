@@ -1,0 +1,6 @@
+# Data files
+*.fits
+*.txt
+
+# Output directories  
+Disk_Residual_Profile/
