@@ -306,19 +306,25 @@ class DiskResiduals:
         )
         
         # Get 2D radius map
+        # cube.disk_coords return a tuple of (rmap, theta_map, zmap)
+        # A 2D array where each pixel at (x, y) is assigned to a radial value.
         rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
         
 
-        # Get radial bin edges
+        # Get the radial bin edges in order to assign each pixel to a bin with a range
+        # rvals: radial bin centers
+        # cube.radial_sampling returns the radial bin edges and centers
         rbins, _ = cube.radial_sampling(rvals=x)
         
         # Assign each pixel to a bin
-        bin_index = np.digitize(rmap, rbins) - 1  # 0-based
-        
+        # np.digitize returns the indices of the bins to which each value in rmap belongs
+    
+        bin_index = np.digitize(rmap, rbins) - 1  # 0-based , means from column[1] to column[0] as the first bin
+
         # Fill 2D array with sigma values
-        sigma_2d = np.zeros_like(rmap)
+        sigma_2d = np.zeros_like(rmap) # Create an empty array with the same shape as rmap
         for i in range(len(dy)):
-            sigma_2d[bin_index == i] = dy[i] * scale_factor
+            sigma_2d[bin_index == i] = dy[i] * scale_factor  # Assign the sigma value to the corresponding pixels
         
         # Save as FITS if requested into another subfolder
 
@@ -339,6 +345,7 @@ class DiskResiduals:
         Plot original residual image alongside the sigma mask.
         """
         # Create sigma mask
+    
         sigma_2d, _ = self.create_sigma_mask(robust_val, scale_factor, save_fits=True)
         
         # Load original data
