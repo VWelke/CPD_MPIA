@@ -340,7 +340,7 @@ class DiskResiduals:
         
         return sigma_2d, (x, y, dy)
 
-    def plot_sigma_comparison(self, robust_val="1.0", scale_factor=3.0):
+    def plot_sigma_comparison(self, robust_val="1.0", scale_factor=1.0, save_fig=True):
         """
         Plot original residual image alongside the sigma mask.
         """
@@ -363,5 +363,15 @@ class DiskResiduals:
         axes[1].set_title(f"{self.name} {scale_factor}σ Mask")
         plt.colorbar(im1, ax=axes[1], label=f'{scale_factor}σ (Jy/beam)')
         
+        # Save figure 
+        if save_fig:
+            import os
+            output_dir = "figures"
+            os.makedirs(output_dir, exist_ok=True)
+            filename = os.path.join(output_dir, f"{self.name}_sigma_comparison_robust{robust_val}_scale{scale_factor}.png")
+            plt.savefig(filename, dpi=150, bbox_inches='tight')
+            print(f"Plot saved: {filename}")
+        
         plt.show()
+        return fig
             
