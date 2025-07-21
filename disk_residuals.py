@@ -51,15 +51,76 @@ class DiskResiduals:
 
     def load_ringgap(self, ringgap_path):
         """
-        Load the ringgap profile from a text file.
-        The file should contain radius and intensity columns.
+        Load ring/gap data from a text file.
+        File format (10 columns):
+        Radial_location(au), Radial_location(arcsec), Flag(0=gaps,1=rings), 
+        Width(au), Width(arcsec), Gap_depth, R_in(au), R_in(arcsec), R_out(au), R_out(arcsec)
         """
         arr = np.loadtxt(ringgap_path, comments="#")
-        self.ringgap_profile = {
-            "radius_au": arr[:, 0],  # column 0 is radius in au
-            "intensity_Jy_sr": arr[:, 1],  # column 1 is intensity in Jy/sr
-            "d_intensity_Jy_sr": arr[:, 2]  # column 2 is uncertainty in Jy/sr
-        }   
+    
+        # If the array is 1D, convert it to 2D with one row so we can index it consistently
+        if arr.ndim == 1:        # ...existing code...
+        
+        if hasattr(self, "ringgap") and self.ringgap is not None and self.ringgap.size > 0:
+            ringgap_arr = self.ringgap 
+        
+            # If ringgap_arr is a 1D array, convert to 2D with one row 
+            if ringgap_arr.ndim == 1:     
+                ringgap_arr = ringgap_arr[np.newaxis, :]
+        
+            # Flags to track if labels have been added
+            gap_label_added = False
+            ring_label_added = False
+        
+            # Each row: [Radial_location(au), Radial_location(arcsec), Flag(0=gaps,1=rings), 
+            #           Width(au), Width(arcsec), Gap_depth, R_in(au), R_in(arcsec), R_out(au), R_out(arcsec)]
+            for row in ringgap_arr:  
+                # Extract data with clearer variable names
+                rad_au = row[0]
+                rad_arcsec = row[1] 
+                flag = int(row[2])
+                width_au = row[3]
+                width_arcsec = row[4]
+                gap_depth = row[5]
+                
+                # Use the appropriate radius and width based on unit
+                if radius_unit == "au":
+                    rad = rad_au
+                    width = width_au if not np.isnan(width_au) else None
+                else:
+                    rad = rad_arcsec  
+                    width = width_arcsec if not np.isnan(width_arcsec) else None
+                                    
+                color = '#b9fbc0' if flag == 0 else '#cdb4fe'  # sage green for gaps, lavender for rings
+                
+                if flag == 0:
+                    label = 'Gap' if not gap_label_added else None
+                    gap_label_added = True
+                else:
+                    label = 'Ring' if not ring_label_added else None
+                    ring_label_added = True
+                    
+                ax.axvline(rad, color=color, linestyle=':', alpha=1.0, label=label)
+                if width is not None and width > 0:
+                    ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
+            arr = arr[np.newaxis, :]
+        
+        # Store the full array for use in plot_profiles
+        self.ringgap = arr
+        
+        # Also create a more accessible dictionary format
+        self.ringgap_info = {
+            "radius_au": arr[:, 0],        # Column 0: radius in AU
+            "radius_arcsec": arr[:, 1],    # Column 1: radius in arcsec
+            "flag": arr[:, 2].astype(int), # Column 2: 0=gap, 1=ring
+            "width_au": arr[:, 3],         # Column 3: width in AU
+            "width_arcsec": arr[:, 4],     # Column 4: width in arcsec
+            "gap_depth": arr[:, 5],        # Column 5: gap depth (NaN for rings)
+            "r_in_au": arr[:, 6],          # Column 6: inner radius in AU
+            "r_in_arcsec": arr[:, 7],      # Column 7: inner radius in arcsec
+            "r_out_au": arr[:, 8],         # Column 8: outer radius in AU
+            "r_out_arcsec": arr[:, 9]      # Column 9: outer radius in arcsec
+        }  
 
     def load_residuals(self):
         """
@@ -133,7 +194,8 @@ class DiskResiduals:
         cube_resid = self.get_cube(robust_val, FOV=FOV, cube_type="residual")
 
         
-        # Get profiles (x in arcsec)
+        # Get radial profiles (x in arcsec , y in Jy/beam, dy in Jy/beam)
+        # Assume correlated noise for the radial profile 
         x_cl, y_cl, dy_cl = cube_clean.radial_profile(
             inc=self.inc, PA=self.PA, unit='Jy/beam',assume_correlated=True
         )
@@ -141,7 +203,7 @@ class DiskResiduals:
             inc=self.inc, PA=self.PA, unit='Jy/beam',assume_correlated=True
         )
 
-            # Convert radius unit
+        # Convert radius unit to au if requested
         if radius_unit == "au":
             x_cl = x_cl * self.distance_pc
             x_res = x_res * self.distance_pc
@@ -152,42 +214,65 @@ class DiskResiduals:
             xlabel = "Radius (arcsec)"
             gap_unit_factor = 1.0
 
-        # Plot
+        # Create the plot
         fig, ax = plt.subplots(constrained_layout=True, figsize = (12, 6))
+
+
+        # Plot the CLEAN and residual profiles, with error bars
+
+        # CLEAN 
         ax.plot(x_cl, y_cl, color='gray', linewidth=2, label='CLEAN')
         ax.errorbar(x_cl, y_cl, dy_cl, fmt='none', ecolor='gray', alpha=0.4, capsize=2)
+
+        # Residual
         ax.plot(x_res, y_res, color='crimson', linewidth=2, label='Residual')
         ax.errorbar(x_res, y_res, dy_res, fmt='none', ecolor='crimson', alpha=0.4 ,capsize=2)
 
-         # Overlay R90 vertical line and error band
-        if hasattr(self, "disksize"):
-            R90 = self.disksize["R90"] * gap_unit_factor
+
+        # Line for R90 disk size
+        # hasattr(self, "disksize") checks if disksize is loaded
+        # Convert to correct unit
+
+        if hasattr(self, "disksize"):  
+            R90 = self.disksize["R90"] * gap_unit_factor   
             err_low = self.disksize["R90_err_low"] * gap_unit_factor
             err_high = self.disksize["R90_err_high"] * gap_unit_factor
             ax.axvline(R90, color='k', linestyle='--', label='R90')
             ax.axvspan(R90 - err_low, R90 + err_high, color='k', alpha=0.15, label='R90 error')
 
-        # Overlay gaps/rings vertical line and width band
+
+        # Plot bands for rings and gaps
         if hasattr(self, "ringgap") and self.ringgap is not None and self.ringgap.size > 0:
-            ringgap_arr = self.ringgap
-            if ringgap_arr.ndim == 1:
+            ringgap_arr = self.ringgap 
+
+            # If ringgap_arr is a 1D array, convert to 2D with one row 
+            if ringgap_arr.ndim == 1:     
                 ringgap_arr = ringgap_arr[np.newaxis, :]
+
+            # Flags to track if labels have been added
             gap_label_added = False
             ring_label_added = False
-            for row in ringgap_arr:
+
+            # Each row is [Radial_location(au)	Radial_location(arcsec)	Flag(0 for gaps, 1 for rings)	Width(au)	Width(arcsec)	Gap_depth	R_in(au)	R_in(arcsec)	R_out(au)	R_out(arcsec)
+            for row in ringgap_arr:  
                 rad = row[1] * gap_unit_factor
                 flag = int(row[2])
                 width = row[4] * gap_unit_factor if not np.isnan(row[4]) else None
                                 
                 color = '#b9fbc0' if flag == 0 else '#cdb4fe'  # sage green for gaps, lavender for rings
                 
-                if flag == 0:
-                    label = 'Gap' if not gap_label_added else None
+                # Ensure labels are added only once
+                if flag == 0:   #
+                    label = 'Gap' if not gap_label_added else None # if not gap_label_added: if gap_label_added is False
                     gap_label_added = True
                 else:
                     label = 'Ring' if not ring_label_added else None
                     ring_label_added = True
+
+
                 ax.axvline(rad, color=color, linestyle=':', alpha=1.0, label=label)
+
+                
                 if width is not None and width > 0:
                     ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
                 
@@ -196,8 +281,88 @@ class DiskResiduals:
         ax.set_yscale('log')
         ax.set_xlabel(xlabel)
         ax.set_ylabel('Intensity (Jy/beam)')
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)  # box outside the plot
         ax.set_title(f"{self.name} robust={robust_val}")
         plt.show()
+    
+
+    def create_sigma_mask(self, robust_val="1.0", scale_factor=1.0, save_fits=True):
+        """
+        Create a 2D sigma mask from the radial profile standard deviation.
         
+        Parameters:
+        - robust_val: Briggs robust parameter (string)
+        - scale_factor: Multiply sigma by this factor (e.g., 3.0 for 3-sigma)
+        - save_fits: Whether to save the mask as a FITS file
         
+        Returns:
+        - sigma_2d: 2D array with sigma values for each pixel
+        - radial_profile: tuple (x, y, dy) from the radial profile
+        """
+        # Load the residual cube
+        cube = self.get_cube(robust_val, cube_type="residual")
+        
+        # Get radial profile with assume_correlated=False for standard deviation
+        x, y, dy = cube.radial_profile(
+            inc=self.inc, 
+            PA=self.PA, 
+            unit='Jy/beam', 
+            assume_correlated=False
+        )
+        
+        # Save radial profile to text file
+        profile_filename = f"{self.name}_residual_radial_profile_robust{robust_val}.txt"
+        np.savetxt(
+            profile_filename,
+            np.column_stack([x, y, dy]),
+            header="radius [arcsec] intensity [Jy/beam] standard deviation [Jy/beam]"
+        )
+        
+        # Get 2D radius map
+        rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
+        
+        # Get radial bin edges
+        rbins, _ = cube.radial_sampling(rvals=x)
+        
+        # Assign each pixel to a bin
+        bin_index = np.digitize(rmap, rbins) - 1  # 0-based
+        
+        # Fill 2D array with sigma values
+        sigma_2d = np.zeros_like(rmap)
+        for i in range(len(dy)):
+            sigma_2d[bin_index == i] = dy[i] * scale_factor
+        
+        # Save as FITS if requested
+        if save_fits:
+            fits_filename = f"{self.name}_sigma_mask_robust{robust_val}.fits"
+            if scale_factor != 1.0:
+                fits_filename = f"{self.name}_sigma_mask_{scale_factor}sigma_robust{robust_val}.fits"
+            fits.writeto(fits_filename, sigma_2d, cube.header, overwrite=True)
+            print(f"Saved sigma mask: {fits_filename}")
+        
+        return sigma_2d, (x, y, dy)
+
+    def plot_sigma_comparison(self, robust_val="1.0", scale_factor=3.0):
+        """
+        Plot original residual image alongside the sigma mask.
+        """
+        # Create sigma mask
+        sigma_2d, _ = self.create_sigma_mask(robust_val, scale_factor, save_fits=True)
+        
+        # Load original data
+        cube = self.get_cube(robust_val, cube_type="residual")
+        orig_data = cube.data
+        
+        # Plot side by side
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5), constrained_layout=True)
+        
+        im0 = axes[0].imshow(orig_data, origin='lower', cmap='inferno')
+        axes[0].set_title(f"{self.name} Original Residual (robust={robust_val})")
+        plt.colorbar(im0, ax=axes[0], label='Jy/beam')
+        
+        im1 = axes[1].imshow(sigma_2d, origin='lower', cmap='viridis')
+        axes[1].set_title(f"{self.name} {scale_factor}σ Mask")
+        plt.colorbar(im1, ax=axes[1], label=f'{scale_factor}σ (Jy/beam)')
+        
+        plt.show()
+            
