@@ -127,7 +127,7 @@ class DiskResiduals:
     # ImageCube Methods
     #---------------------
 
-    def get_cube(self, robust_val, FOV=10.0, cube_type="residual"):
+    def get_cube(self, robust_val, FOV=None, cube_type="residual"):
         """
         Returns a GoFish ImageCube for the disk and robust index.
         cube_type: "residual" or "clean"
@@ -362,16 +362,13 @@ class DiskResiduals:
         im1 = axes[1].imshow(sigma_2d, origin='lower', cmap='viridis')
         axes[1].set_title(f"{self.name} {scale_factor}σ Mask")
         plt.colorbar(im1, ax=axes[1], label=f'{scale_factor}σ (Jy/beam)')
-        
-        # Save figure 
-        if save_fig:
-            import os
-            output_dir = "figures"
-            os.makedirs(output_dir, exist_ok=True)
-            filename = os.path.join(output_dir, f"{self.name}_sigma_comparison_robust{robust_val}_scale{scale_factor}.png")
-            plt.savefig(filename, dpi=150, bbox_inches='tight')
-            print(f"Plot saved: {filename}")
+
         
         plt.show()
-        return fig
-            
+       
+    #----------------------------------------
+    # Planet formation signature extraction
+    #----------------------------------------
+
+
+    
