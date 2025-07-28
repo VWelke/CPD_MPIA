@@ -289,6 +289,7 @@ class DiskResiduals:
         # Load the residual cube
         cube = self.get_cube(robust_val, cube_type="residual")
         
+        
         # Get radial profile with assume_correlated=False 
         # so that dy is simple the standard deviation per bin
 
@@ -354,6 +355,11 @@ class DiskResiduals:
 
 
         return sigma_2d, (x, y, dy)
+
+
+
+
+
 
     def plot_sigma_comparison(self, robust_val="1.0", scale_factor=1.0):
         """
@@ -436,11 +442,15 @@ class DiskResiduals:
         """
         Detect high SNR sources. Save detected properties to a text file.
         """
+        threshold_str = str(threshold).replace('.', 'p')
 
         # Get pixel scale
         cube = self.get_cube(robust_val, cube_type="residual")
         pixel_scale_arcsec = abs(cube.header['CDELT1']) * 3600  # Convert deg to arcsec
         pixel_scale_au = pixel_scale_arcsec * self.distance_pc
+
+        self.pixel_scale_au = pixel_scale_au
+
         print(f"  Pixel scale: {pixel_scale_au:.1f} AU/pixel")
 
         # Detect sources above threshold
@@ -458,6 +468,7 @@ class DiskResiduals:
         catalog = SourceCatalog(snr_map, segm_deblend)
         table = catalog.to_table()
 
+        available_columns = set(table.colnames)
         columns_to_keep = [
             'id',
             'xcentroid', 'ycentroid',
@@ -465,6 +476,9 @@ class DiskResiduals:
             'max_value',
             'sum',
         ]
+
+        # Keep only the columns that actually exist
+        columns_to_keep = [col for col in columns_to_keep if col in available_columns]
         table = table[columns_to_keep]
 
         # Get radial distance map
@@ -488,7 +502,10 @@ class DiskResiduals:
         disk_output_dir = os.path.join(output_base, self.name, f"robust_{robust_val}")
         os.makedirs(disk_output_dir, exist_ok=True)
 
-        filename = os.path.join(disk_output_dir, f"source_catalog_{self.name}_robust{robust_val}.txt")
+        filename = os.path.join(
+            disk_output_dir, 
+            f"source_catalog_{self.name}_robust{robust_val}_thresh{threshold_str}.txt"
+        )
         ascii.write(table, filename, format='commented_header', overwrite=True)
         print(f"  Saved source catalog to {filename}")
 
