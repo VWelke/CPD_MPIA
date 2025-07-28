@@ -144,3 +144,68 @@ plt.show()
 print(f"\nSummary:")
 print(f"Sources found at radii: {min(source_radii):.1f} - {max(source_radii):.1f} AU")
 print(f"Most sources in radial bin: {max(set(source_bins), key=source_bins.count)}")
+
+
+
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from photutils import detect_sources, deblend_sources
+
+def plot_snr_map_simple(disk_name, disk_obj, snr_map, robust_val, threshold3=3.0, threshold5=5.0, save_plots=True, output_dir="SNR_plots"):
+    """
+    Plot simplified SNR map with 3σ and 5σ contours.
+
+    Parameters:
+    - disk_name: Name of the disk
+    - disk_obj: The disk object to access header info
+    - snr_map: 2D SNR array
+    - robust_val: Robust parameter as string
+    - threshold3: 3σ contour level
+    - threshold5: 5σ contour level
+    - save_plots: Whether to save the plot
+    - output_dir: Directory to save output
+    """
+
+    # Get pixel scale from header
+    cube = disk_obj.get_cube(robust_val, cube_type="residual")
+    pixel_scale_arcsec = abs(cube.header['CDELT1']) * 3600
+    print(f"  Pixel scale: {pixel_scale_arcsec:.3f} arcsec/pixel")
+
+    # Prepare output directory
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Create binary masks for 3σ and 5σ
+    mask_3sigma = snr_map >= threshold3
+    mask_5sigma = snr_map >= threshold5
+
+    # Plot
+    plt.figure(figsize=(8, 7))
+    plt.imshow(snr_map, origin='lower', cmap='gray', vmin=-5, vmax=5)
+    plt.colorbar(label='SNR')
+    
+    # Contours
+    plt.contour(mask_3sigma, levels=[0.5], colors='blue', linewidths=1.5, linestyles='--', label='>3σ')
+    plt.contour(mask_5sigma, levels=[0.5], colors='red', linewidths=1.5, linestyles='-', label='>5σ')
+
+    plt.title(f"{disk_name} — SNR Contours (robust={robust_val})")
+    plt.xlabel("Pixel X")
+    plt.ylabel("Pixel Y")
+    plt.grid(False)
+
+    # Legend (manual)
+    from matplotlib.lines import Line2D
+    custom_lines = [
+        Line2D([0], [0], color='blue', lw=2, linestyle='--', label='>3σ'),
+        Line2D([0], [0], color='red', lw=2, linestyle='-', label='>5σ')
+    ]
+    plt.legend(handles=custom_lines, loc='upper right')
+
+    if save_plots:
+        fname = os.path.join(output_dir, f"{disk_name}_SNR_contours_robust{robust_val}.png")
+        plt.savefig(fname, dpi=150, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
