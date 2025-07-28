@@ -149,10 +149,10 @@ class DiskResiduals:
             folder = self.path.replace("frank_residuals", "data")
             full_path1 = os.path.join(folder, fname1)
             full_path2 = os.path.join(folder, fname2)
-            if os.path.exists(full_path2):
-                return imagecube(full_path2, FOV=FOV)
-            elif os.path.exists(full_path1):
+            if os.path.exists(full_path1):
                 return imagecube(full_path1, FOV=FOV)
+            elif os.path.exists(full_path2):
+                return imagecube(full_path2, FOV=FOV)
             else:
                 print(f"WARNING: File not found: {full_path1} or {full_path2}")
                 return None
