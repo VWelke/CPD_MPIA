@@ -11,7 +11,12 @@ from astropy.io import fits
 import pandas as pd
 from gofish import imagecube
 import matplotlib.pyplot as plt
+import warnings
 
+# Source detection
+from photutils.segmentation import detect_sources, deblend_sources
+from photutils.segmentation import SourceCatalog
+from astropy.io import ascii  # ascii for saving source properties
 
 class DiskResiduals:
 
@@ -33,6 +38,8 @@ class DiskResiduals:
         self.residuals = {}  # Dict to store {Briggs index value: FITS data}
         self.clean_images = {}   # Dict to store {Briggs index value: FITS data} for CLEAN images
         self.clean_profile = None  # Dict to store {Briggs index value: profile data}, currently None
+        self.sigma_masks = {}
+        self.snr_maps = {}  # Dict to store SNR maps for each robust value
 
     #---------------------
     # Data Loading Methods
@@ -325,7 +332,10 @@ class DiskResiduals:
         sigma_2d = np.zeros_like(rmap) # Create an empty array with the same shape as rmap
         for i in range(len(dy)):
             sigma_2d[bin_index == i] = dy[i] * scale_factor  # Assign the sigma value to the corresponding pixels
-        
+
+        # Store in object
+        self.sigma_masks[robust_val] = sigma_2d
+
         # Save as FITS if requested into another subfolder
 
 
@@ -338,15 +348,20 @@ class DiskResiduals:
             fits.writeto(fits_path, sigma_2d, cube.header, overwrite=True)  # sigma_2d is 2D array, cube.header is the header from the residual cube
             print(f"Saved sigma mask: {fits_path}")
         
+
+        # Store the sigma mask in the object
+        self.sigma_mask = sigma_2d
+
+
         return sigma_2d, (x, y, dy)
 
-    def plot_sigma_comparison(self, robust_val="1.0", scale_factor=1.0, save_fig=True):
+    def plot_sigma_comparison(self, robust_val="1.0", scale_factor=1.0):
         """
         Plot original residual image alongside the sigma mask.
         """
         # Create sigma mask
     
-        sigma_2d, _ = self.create_sigma_mask(robust_val, scale_factor, save_fits=True)
+        sigma_2d, _ = self.create_sigma_mask(robust_val, scale_factor, save_fits=False)
         
         # Load original data
         cube = self.get_cube(robust_val, cube_type="residual")
@@ -365,10 +380,115 @@ class DiskResiduals:
 
         
         plt.show()
-       
-    #----------------------------------------
-    # Planet formation signature extraction
-    #----------------------------------------
 
 
+    # ┌──────────────────────────────────────────┐
+    # │    Planet formation signature extraction │
+    # └──────────────────────────────────────────┘
+
+    #---------------------------------------------
+    # Create SNR maps for disk residuals
+    #---------------------------------------------
+
+
+    def create_snr_map(self, robust_val="1.0"):
+        """
+        Create SNR map for THIS disk and store it in the object.
+        """
+        import warnings
+
+        # Normalize key
+        robust_key = f"{float(robust_val):.1f}"
+
+        if robust_key in self.snr_maps:
+            return self.snr_maps[robust_key]
+
+        try:
+            sigma_2d = self.sigma_masks[robust_key]
+            residual_data = self.residuals[robust_key]
+
+            residual_data = np.squeeze(residual_data) 
+
+            print(f"  {self.name}: Sigma shape: {sigma_2d.shape}, Residual shape: {residual_data.shape}")
+
+            if sigma_2d.shape != residual_data.shape:
+                raise ValueError(f"Dimension mismatch: sigma {sigma_2d.shape} vs residual {residual_data.shape}")
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                snr_map = residual_data / sigma_2d
+                snr_map[sigma_2d == 0] = 0
+                snr_map[~np.isfinite(snr_map)] = 0
+
+            self.snr_maps[robust_key] = snr_map
+            return snr_map
+
+        except Exception as e:
+            print(f"  Error creating SNR map for {self.name}: {e}")
+            return None
+        
     
+    #---------------------------------------------
+    # Detect high SNR regions 
+    #---------------------------------------------
+
+    def source_detection(self, snr_map, robust_val, threshold=5.0, npixels=1, connectivity=4):
+        """
+        Detect high SNR sources. Save detected properties to a text file.
+        """
+
+        # Get pixel scale
+        cube = self.get_cube(robust_val, cube_type="residual")
+        pixel_scale_arcsec = abs(cube.header['CDELT1']) * 3600  # Convert deg to arcsec
+        pixel_scale_au = pixel_scale_arcsec * self.distance_pc
+        print(f"  Pixel scale: {pixel_scale_au:.1f} AU/pixel")
+
+        # Detect sources above threshold
+        segm = detect_sources(snr_map, threshold, npixels=npixels, connectivity=connectivity)
+
+        if segm is not None:
+            segm_deblend = deblend_sources(snr_map, segm, npixels=npixels, connectivity=connectivity)
+            print(f"  Detected {segm_deblend.nlabels} sources")
+        else:
+            segm_deblend = None
+            print(f"  No sources detected above {threshold}σ")
+            return  # Exit early if no detections
+
+        # Generate catalog and select relevant properties
+        catalog = SourceCatalog(snr_map, segm_deblend)
+        table = catalog.to_table()
+
+        columns_to_keep = [
+            'id',
+            'xcentroid', 'ycentroid',
+            'area',
+            'max_value',
+            'sum',
+        ]
+        table = table[columns_to_keep]
+
+        # Get radial distance map
+        rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
+
+        # Compute radial distances for each source
+        radius_list = []
+        for i in range(len(catalog)):
+        
+            x_pix = int(round(catalog.xcentroid[i]))
+            y_pix = int(round(catalog.ycentroid[i]))
+            radius_arcsec = rmap[y_pix, x_pix]
+            radius_au = radius_arcsec * self.distance_pc
+            radius_list.append(radius_au)
+
+        # Add as a new column
+        table['radius_au'] = radius_list
+
+        # Save to text file in organized folder structure
+        output_base = "Disk_Residual_Profile"
+        disk_output_dir = os.path.join(output_base, self.name, f"robust_{robust_val}")
+        os.makedirs(disk_output_dir, exist_ok=True)
+
+        filename = os.path.join(disk_output_dir, f"source_catalog_{self.name}_robust{robust_val}.txt")
+        ascii.write(table, filename, format='commented_header', overwrite=True)
+        print(f"  Saved source catalog to {filename}")
+
