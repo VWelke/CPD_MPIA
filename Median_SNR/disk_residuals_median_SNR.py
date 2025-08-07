@@ -12,6 +12,9 @@ import pandas as pd
 from gofish import imagecube
 import matplotlib.pyplot as plt
 import warnings
+from pathlib import Path
+from matplotlib import cm, colors
+import matplotlib.ticker as mtick
 
 # Source detection
 from photutils.segmentation import detect_sources, deblend_sources
@@ -32,6 +35,7 @@ class DiskResiduals_Median_SNR:
         - geom_file: Full path to geometry .txt file
         - distance_pc: Distance to the disk in parsecs, used for unit conversion
         """
+        self.rms_noise_FullFOV = None  # RMS noise for Full FOV images, to be set later
         self.name = name
         self.path = path
         self.inc, self.PA, self.center = self._load_geometry(geom_file)
@@ -40,6 +44,7 @@ class DiskResiduals_Median_SNR:
         self.clean_profile = None  # Dict to store {Briggs index value: profile data}, currently None
         self.sigma_masks = {}
         self.snr_maps = {}  # Dict to store SNR maps for each robust value
+        self.snr_map_FullFOV = {}
 
     #---------------------
     # Data Loading Methods
@@ -157,7 +162,7 @@ class DiskResiduals_Median_SNR:
     # ImageCube Methods
     #---------------------
 
-    def get_cube(self, robust_val, FOV=None, cube_type="residual"):
+    def get_cube(self, robust_val, FOV=None, cube_type="residual", use_full_fov=False):
         r = self._rkey(robust_val)                      # normalize
         if cube_type == "residual":
             fname = f"{self.name}_continuum_resid_robust{r}.image.fits"
@@ -172,10 +177,17 @@ class DiskResiduals_Median_SNR:
             folder = self.path.replace("frank_residuals", "data")
             full_path1 = os.path.join(folder, fname1)
             full_path2 = os.path.join(folder, fname2)
-            if os.path.exists(full_path1):
-                return imagecube(full_path1, FOV=FOV)
-            if os.path.exists(full_path2):
-                return imagecube(full_path2, FOV=FOV)
+            if use_full_fov:
+                if os.path.exists(full_path2):
+                    return imagecube(full_path2, FOV=FOV)
+                else:
+                    print(f"[WARN] {self.name}: Full FOV file not found: {full_path2}")
+            else:
+                if os.path.exists(full_path1):
+                    return imagecube(full_path1, FOV=FOV)
+                elif os.path.exists(full_path2):  # Fallback if main not found
+                    print(f"[INFO] {self.name}: Default CLEAN file not found, using FullFOV instead.")
+                    return imagecube(full_path2, FOV=FOV)
             print(f"WARNING: File not found: {full_path1} or {full_path2}")
             return None
         else:
@@ -226,8 +238,8 @@ class DiskResiduals_Median_SNR:
         ax.errorbar(x_cl, y_cl, dy_cl, fmt='none', ecolor='gray', alpha=0.4, capsize=2)
 
         # Residual
-        ax.plot(x_res, y_res, color='crimson', linewidth=2, label='Residual')
-        ax.errorbar(x_res, y_res, dy_res, fmt='none', ecolor='crimson', alpha=0.4 ,capsize=2)
+        ax.plot(x_res, dy_res, color='crimson', linewidth=2, label='Residual dy')
+        #ax.errorbar(x_res, y_res, dy_res, fmt='none', ecolor='crimson', alpha=0.4 ,capsize=2)
 
 
         # Line for R90 disk size
@@ -471,6 +483,13 @@ class DiskResiduals_Median_SNR:
     # Detect high SNR regions 
     #---------------------------------------------
 
+    def catalogs_exist(disk_name, rkey, base="Disk_Residual_Profile_Median_SNR"):
+        p3 = os.path.join(base, disk_name, f"robust_{rkey}",
+                        f"source_catalog_{disk_name}_robust{rkey}_thresh3p0.txt")
+        p5 = os.path.join(base, disk_name, f"robust_{rkey}",
+                        f"source_catalog_{disk_name}_robust{rkey}_thresh5p0.txt")
+        return os.path.exists(p3) and os.path.exists(p5)
+
     def source_detection(self, snr_map, robust_val, threshold=5.0, npixels=1, connectivity=4, overwrite=False):
         """
         Detect high-SNR sources and save a catalog.
@@ -570,7 +589,7 @@ class DiskResiduals_Median_SNR:
     
 
     
-    def plot_snr_map_simple(self, robust_val, vmin=-6, vmax=6, show=True):
+    def plot_snr_map_simple(self, robust_val, vmin=-6, vmax=6, show=True, use_full_fov=False):
         """
         Plot simplified SNR map with 3σ and 5σ contours and the R90 contour.
         Skips cleanly if required data/cubes are missing.
@@ -578,7 +597,13 @@ class DiskResiduals_Median_SNR:
         r = self._rkey(robust_val)
 
         # Ensure we have/compute an SNR map
-        snr_map = self.snr_maps.get(r)
+        if use_full_fov:
+            print(f"[INFO] {self.name}: Using full FOV for robust {r} SNR map.")
+            snr_map = self.snr_map_FullFOV.get(r)
+        else:
+            print(f"[INFO] {self.name}: Using default FOV for robust {r} SNR map.")
+            snr_map = self.snr_maps.get(r)
+
         if snr_map is None:
             snr_map = self.create_snr_map(r)
         if snr_map is None:
@@ -586,10 +611,14 @@ class DiskResiduals_Median_SNR:
             return
 
         # Need residual cube for header (pixel scale) and disk_coords
-        cube = self.get_cube(r, cube_type="residual")
-        if cube is None:
-            print(f"[WARN] {self.name}: robust {r} residual cube missing — skipping plot.")
-            return
+        if use_full_fov:
+            print(f"[INFO] {self.name}: Using full FOV clean cube for robust {r}.")
+            cube = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
+        else:
+            cube = self.get_cube(r, cube_type="residual")
+            if cube is None:
+                print(f"[WARN] {self.name}: robust {r} residual cube missing — skipping plot.")
+                return
 
         # Binary masks for contours
         mask_3sigma = snr_map >= 3.0
@@ -613,13 +642,14 @@ class DiskResiduals_Median_SNR:
         from matplotlib.lines import Line2D
 
         plt.figure(figsize=(8, 7))
-        plt.imshow(snr_map, origin='lower', cmap='PiYG', vmin=vmin, vmax=vmax)
+        # purple-green colormap: PiYG, greyscale: Greys
+        plt.imshow(snr_map, origin='lower', cmap='coolwarm', vmin=vmin, vmax=vmax)
         cb = plt.colorbar()
         cb.set_label('SNR')
 
         # Contours
-        plt.contour(mask_3sigma, levels=[0.5], colors='brown', linewidths=1.5, linestyles='--')
-        plt.contour(mask_5sigma, levels=[0.5], colors='blue', linewidths=1.5, linestyles='-')
+        plt.contour(mask_3sigma, levels=[0.5], colors='yellow', linewidths=1.5, linestyles='--')
+        plt.contour(mask_5sigma, levels=[0.5], colors='Red', linewidths=4, linestyles='-')
         plt.contour(rmap, levels=[r90_arcsec], colors='orange', linewidths=2.5, linestyles='-')
 
         # Labels
@@ -639,13 +669,22 @@ class DiskResiduals_Median_SNR:
             plt.show()
 
 
-    def save_snr_map_as_fits(self, robust_val="2.0", output_dir="SNR_FITS_Maps"):
+    def save_snr_map_as_fits(self, robust_val="2.0", output_dir="SNR_FITS_Maps", overwrite=False):
         """
         Save the 2D SNR map as a FITS file using the (trimmed) header from the residual map.
         Skips if SNR/cube/header/shape are missing or inconsistent. Returns output path or None.
         """
         # Normalize robust token consistently with the rest of your code
         rkey = self._rkey(robust_val) if hasattr(self, "_rkey") else f"{float(robust_val):.1f}"
+
+        # Build output path to skip heavy work if file exists
+        os.makedirs(output_dir, exist_ok=True)
+        outname = os.path.join(output_dir, f"{self.name}_SNR_robust{rkey}.fits")
+
+        # Early skip if file already exists
+        if (not overwrite) and os.path.exists(outname):
+            print(f"[SKIP] {self.name}: {outname} already exists.")
+            return outname
 
         # Get SNR (build if needed)
         snr_map = self.snr_maps.get(rkey)
@@ -690,3 +729,155 @@ class DiskResiduals_Median_SNR:
         fits.writeto(outname, np.asarray(snr_map, dtype=np.float32), header, overwrite=True)
         print(f"[OK]  {self.name}: saved {outname}")
         return outname
+    
+
+ 
+
+    def plot_residual_dy_from_files(self, robust_vals,
+                                    base_folder="Disk_Residual_Profile_Median_SNR",
+                                    radius_unit="arcsec", figsize=(8, 5)):
+
+        disk_dir = Path(base_folder) / self.name
+        files_found = 0
+
+        # color map across robust values
+        cmap = cm.get_cmap("tab10") 
+        norm = colors.Normalize(vmin=0, vmax=max(1, len(robust_vals)-1))
+
+        fig, ax = plt.subplots(constrained_layout=True, figsize=figsize)
+
+        for i, r in enumerate(robust_vals):
+            p = disk_dir / f"{self.name}_residual_radial_profile_robust{r}.txt"
+            if not p.exists():
+                print(f"[WARN] missing robust {r}: {p.name}")
+                continue
+
+            data = np.loadtxt(p, comments="#")
+            x = data[:, 0]
+            dy = data[:, 2]
+
+            if radius_unit == "au":
+                x = x * self.distance_pc
+                xlabel = "Radius (au)"
+                 # Convert gaps/rings to au
+                gap_unit_factor = self.distance_pc
+            else:
+                xlabel = "Radius (arcsec)"
+                gap_unit_factor = 1.0
+
+            
+
+            color = cmap(norm(i))
+            ax.plot(x, dy, lw=1.8, color=color, label=f"robust {r}")
+            files_found += 1
+
+        if files_found == 0:
+            print(f"[WARN] no residual profiles found under {disk_dir}")
+            plt.close(fig)
+            return
+        
+        # Add R90 line
+    
+        
+        R90 = self.disksize["R90"] * gap_unit_factor   
+            
+        ax.axvline(R90, color='k', linestyle='--', label='R90')
+            
+        
+
+        ax.set_yscale("log")
+        ax.yaxis.set_major_locator(mtick.LogLocator(base=10, subs=(1.0,)))
+        ax.yaxis.set_minor_locator(mtick.LogLocator(base=10, subs=np.arange(2,10)*0.1))
+        ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda v, p: f"{v:.0e}"))
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("Standard deviation dy (Jy/beam)")
+        ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", borderaxespad=0, fontsize=9)
+        ax.set_title(f"{self.name} — residual dy vs radius")
+        # Add dotted grid
+        ax.grid(which='both', linestyle=':', linewidth=0.5, color='gray', alpha=0.4)
+        plt.show()
+
+    def source_detection_outer_only(self,  robust_val, threshold=5.0, npixels=1, connectivity=4, overwrite=False):
+        """
+        Detect high-SNR sources only outside 2 × R90 and save a catalog.
+        Skips work if the output file already exists (unless overwrite=True).
+        """
+
+        rkey = self._rkey(robust_val)
+        if not self.has_robust(rkey):
+            print(f"[WARN] {self.name}: robust {rkey} not available — skipping detection.")
+            return None
+
+        if not hasattr(self, "disksize") or "R90" not in self.disksize:
+            print(f"[WARN] {self.name}: R90 not available — cannot mask inner region.")
+            return None
+
+        thr_str = str(threshold).replace('.', 'p')
+
+        # Output path
+        output_base = r"D:\CPD_MPIA\Median_SNR\Disk_Residual_Profile_Median_SNR"
+        disk_output_dir = os.path.join(output_base, self.name, f"robust_{rkey}")
+        os.makedirs(disk_output_dir, exist_ok=True)
+        filename = os.path.join(
+            disk_output_dir,
+            f"source_catalog_{self.name}_robust{rkey}_thresh{thr_str}_outerOnly.txt"
+        )
+
+        # Skip if already done
+        if (not overwrite) and os.path.exists(filename):
+            print(f"  Catalog exists, skipping: {filename}")
+            return filename
+
+        # Pixel scale
+        cube = cube = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
+        # Load CLEAN image (Full FOV)
+        image_data = np.squeeze(cube.data)  # 2D CLEAN image
+        rms = self.rms_noise_FullFOV
+
+        # Compute simple SNR map
+        snr_map = image_data / rms
+
+
+        self.snr_map_FullFOV[rkey] = snr_map # Store for later use
+
+        pixel_scale_arcsec = abs(cube.header['CDELT1']) * 3600
+        self.pixel_scale_au = pixel_scale_arcsec * self.distance_pc
+        print(f"  Pixel scale: {self.pixel_scale_au:.1f} AU/pixel")
+
+        # Get radial map
+        rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
+
+        # Create mask: keep only r >= 2 × R90
+        r90_arcsec = self.disksize["R90"]
+        outer_mask = rmap >= (2.0 * r90_arcsec)
+
+        # Apply mask: zero out inner region
+        masked_snr_map = snr_map.copy()
+        masked_snr_map[~outer_mask] = 0.0  
+
+        # Detect sources
+        segm = detect_sources(masked_snr_map, threshold, npixels=npixels, connectivity=connectivity)
+        if segm is None:
+            print(f"  No sources detected above {threshold}σ beyond 2×R90")
+            return filename
+
+        segm = deblend_sources(masked_snr_map, segm, npixels=npixels, connectivity=connectivity)
+        print(f"  Detected {segm.nlabels} sources beyond 2×R90")
+
+        catalog = SourceCatalog(masked_snr_map, segm).to_table()
+        keep = [c for c in ['id', 'xcentroid', 'ycentroid', 'area', 'max_value', 'sum'] if c in catalog.colnames]
+        catalog = catalog[keep]
+
+        # Compute radii in AU
+        radius_au = []
+        for i in range(len(catalog)):
+            x_pix = int(round(catalog['xcentroid'][i]))
+            y_pix = int(round(catalog['ycentroid'][i]))
+            radius_au.append(float(rmap[y_pix, x_pix] * self.distance_pc))
+        catalog['radius_au'] = radius_au
+
+        # Save
+        ascii.write(catalog, filename, format='commented_header', overwrite=True)
+        print(f"  Saved outer-only source catalog to {filename}")
+        return filename
