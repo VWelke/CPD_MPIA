@@ -600,15 +600,17 @@ class DiskResiduals_Median_SNR:
         if use_full_fov:
             print(f"[INFO] {self.name}: Using full FOV for robust {r} SNR map.")
             snr_map = self.snr_map_FullFOV.get(r)
+
         else:
             print(f"[INFO] {self.name}: Using default FOV for robust {r} SNR map.")
             snr_map = self.snr_maps.get(r)
+            if snr_map is None:
+                snr_map = self.create_snr_map(r)
 
-        if snr_map is None:
-            snr_map = self.create_snr_map(r)
-        if snr_map is None:
-            print(f"[WARN] {self.name}: robust {r} SNR map unavailable — skipping plot.")
-            return
+    
+        #if snr_map is None:
+           # print(f"[WARN] {self.name}: robust {r} SNR map unavailable — skipping plot.")
+            #return
 
         # Need residual cube for header (pixel scale) and disk_coords
         if use_full_fov:
@@ -824,10 +826,6 @@ class DiskResiduals_Median_SNR:
             f"source_catalog_{self.name}_robust{rkey}_thresh{thr_str}_outerOnly.txt"
         )
 
-        # Skip if already done
-        if (not overwrite) and os.path.exists(filename):
-            print(f"  Catalog exists, skipping: {filename}")
-            return filename
 
         # Pixel scale
         cube = cube = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
@@ -840,6 +838,13 @@ class DiskResiduals_Median_SNR:
 
 
         self.snr_map_FullFOV[rkey] = snr_map # Store for later use
+
+        # Skip if already done
+        if (not overwrite) and os.path.exists(filename):
+            print(f"  Catalog exists, skipping: {filename}")
+            return filename
+        
+
 
         pixel_scale_arcsec = abs(cube.header['CDELT1']) * 3600
         self.pixel_scale_au = pixel_scale_arcsec * self.distance_pc
