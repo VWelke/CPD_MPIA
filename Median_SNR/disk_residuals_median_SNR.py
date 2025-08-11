@@ -15,12 +15,14 @@ import warnings
 from pathlib import Path
 from matplotlib import cm, colors
 import matplotlib.ticker as mtick
+from matplotlib.lines import Line2D
+import math
 
 # Source detection
 from photutils.segmentation import detect_sources, deblend_sources
 from photutils.segmentation import SourceCatalog
 from astropy.io import ascii  # ascii for saving source properties
-
+from astropy.table import Table
 class DiskResiduals_Median_SNR:
 
     #---------------------
@@ -490,7 +492,7 @@ class DiskResiduals_Median_SNR:
                         f"source_catalog_{disk_name}_robust{rkey}_thresh5p0.txt")
         return os.path.exists(p3) and os.path.exists(p5)
 
-    def source_detection(self, snr_map, robust_val, threshold=5.0, npixels=1, connectivity=4, overwrite=False):
+    def source_detection(self, snr_map, robust_val, threshold=5.0, npixels=1, connectivity=4, overwrite=True):
         """
         Detect high-SNR sources and save a catalog.
         Skips work if the output file already exists (unless overwrite=True).
@@ -518,17 +520,34 @@ class DiskResiduals_Median_SNR:
 
         # Pixel scale (info)
         cube = self.get_cube(rkey, cube_type="residual")
-        pixel_scale_arcsec = abs(cube.header['CDELT1']) * 3600
-        self.pixel_scale_au = pixel_scale_arcsec * self.distance_pc
-        print(f"  Pixel scale: {self.pixel_scale_au:.1f} AU/pixel")
+        hdr = cube.header
+        if 'BMAJ' in hdr and 'BMIN' in hdr:  # CASA convention: degrees
+            beam_x_arcsec = float(hdr['BMAJ']) * 3600.0
+            beam_y_arcsec = float(hdr['BMIN']) * 3600.0
+
+        if 'CDELT1' in hdr:
+            pixel_scale_arcsec = abs(float(hdr['CDELT1'])) * 3600.0
+        elif 'CDELT2' in hdr:
+            pixel_scale_arcsec = abs(float(hdr['CDELT2'])) * 3600.0
+
+        beam_area_pix = (beam_x_arcsec * beam_y_arcsec) / (pixel_scale_arcsec ** 2)
+        npixels = int(np.ceil(beam_area_pix))
+
+        print(f"  Using min area = 1 beam = {npixels} pixels (beam={beam_area_pix:.2f} pix)")
+
+        segm = detect_sources(snr_map, threshold, npixels=npixels, connectivity=connectivity)
 
         # Detect
-        segm = detect_sources(snr_map, threshold, npixels=npixels, connectivity=connectivity)
+        #segm = detect_sources(snr_map, threshold, npixels=npixels, connectivity=connectivity)
         if segm is None:
             print(f"  No sources detected above {threshold}σ")
             # Optional: create an empty file so future runs also skip
             # ascii.write(Table(), filename, format='commented_header', overwrite=True)
+            empty_catalog = Table(names=['id','xcentroid','ycentroid','area','max_value','sum','radius_au'])
+            ascii.write(empty_catalog, filename, format='commented_header', overwrite=True)
+            print(f"  Saved EMPTY source catalog to {filename}")
             return filename
+            
 
         segm = deblend_sources(snr_map, segm, npixels=npixels, connectivity=connectivity)
         print(f"  Detected {segm.nlabels} sources")
@@ -641,7 +660,7 @@ class DiskResiduals_Median_SNR:
 
         # ---- Plot ----
         import matplotlib.pyplot as plt
-        from matplotlib.lines import Line2D
+        
 
         plt.figure(figsize=(8, 7))
         # purple-green colormap: PiYG, greyscale: Greys
@@ -669,6 +688,157 @@ class DiskResiduals_Median_SNR:
 
         if show:
             plt.show()
+
+
+    def plot_all_catalog_centroids(self, robust_values, threshold=5.0, catalog_suffix=None,
+                               vmin=-6, vmax=6, use_full_fov=False,
+                               ncols=3, figsize=(5, 5)):
+        """
+        Plot a grid of SNR maps with centroids (in AU) for all non-empty catalogs.
+
+        Parameters
+        ----------
+        robust_values : list of float
+            Robust values to plot.
+        threshold : float
+            Threshold used for the catalog.
+        catalog_suffix : str or None
+            Filename suffix for the catalog (e.g., "full" or "outer").
+        vmin, vmax : float
+            Color limits for SNR map.
+        use_full_fov : bool
+            Whether to use the full-FOV maps.
+        ncols : int
+            Number of subplot columns.
+        figsize : tuple
+            Figure size per subplot (width, height in inches).
+        """
+        thr_str = str(threshold).replace('.', 'p')
+        out_base = "Disk_Residual_Profile_Median_SNR"
+
+        # --- Gather all non-empty catalogs ---
+        robust_nonempty = []
+        cats = []
+        for r in robust_values:
+            rkey = self._rkey(r)
+            if catalog_suffix:
+                fname = f"source_catalog_{self.name}_robust{rkey}_{catalog_suffix}_thresh{thr_str}.txt"
+            else:
+                fname = f"source_catalog_{self.name}_robust{rkey}_thresh{thr_str}.txt"
+
+            cat_path = os.path.join(out_base, self.name, f"robust_{rkey}", fname)
+
+            if not os.path.exists(cat_path):
+                print(f"[WARN] Catalog not found: {cat_path}")
+                continue
+
+            try:
+                cat = ascii.read(cat_path)
+            except Exception as e:
+                print(f"[WARN] Failed to read {cat_path}: {e}")
+                continue
+
+            if len(cat) == 0:
+                print(f"[INFO] Empty catalog — skipping plot: {cat_path}")
+                continue
+
+            robust_nonempty.append(r)
+            cats.append(cat)
+
+        if not robust_nonempty:
+            print(f"[INFO] No non-empty catalogs for {self.name}")
+            return
+
+        # --- Figure setup ---
+        nrows = math.ceil(len(robust_nonempty) / ncols)
+        fig, axes = plt.subplots(nrows, ncols,
+                                figsize=(figsize[0]*ncols, figsize[1]*nrows))
+        axes = np.atleast_1d(axes).flatten()
+
+        for idx, (r, cat) in enumerate(zip(robust_nonempty, cats)):
+            ax = axes[idx]
+            rkey = self._rkey(r)
+
+            # --- Get SNR map + cube ---
+            if use_full_fov:
+                snr_map = self.snr_map_FullFOV.get(rkey)
+                cube = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
+            else:
+                snr_map = self.snr_maps.get(rkey)
+                if snr_map is None:
+                    snr_map = self.create_snr_map(rkey)
+                cube = self.get_cube(rkey, cube_type="residual")
+
+            # --- Pixel scale & AU coordinates ---
+            hdr = cube.header
+            pixscale_arcsec = abs(float(hdr['CDELT1'])) * 3600.0
+            pixscale_au = pixscale_arcsec * self.distance_pc
+
+            ny, nx = snr_map.shape
+            x_au = (np.arange(nx) - nx/2) * pixscale_au
+            y_au = (np.arange(ny) - ny/2) * pixscale_au
+
+            extent = [x_au.min(), x_au.max(), y_au.min(), y_au.max()]
+
+            # --- Masks for contours ---
+            mask_3sigma = snr_map >= 3.0
+            mask_5sigma = snr_map >= 5.0
+            r90_arcsec = self.disksize["R90"]
+            r90_au = r90_arcsec * float(self.distance_pc)
+            rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0] * self.distance_pc  # in AU
+
+            # --- Plot ---
+            im = ax.imshow(snr_map, origin='lower', cmap='coolwarm',
+                        vmin=vmin, vmax=vmax, extent=extent)
+            ax.scatter((cat['xcentroid'] - nx/2) * pixscale_au,
+                    (cat['ycentroid'] - ny/2) * pixscale_au,
+                    marker='x', s=90, linewidths=2.0, color='red')
+
+            # Contours
+            ax.contour(x_au, y_au, mask_3sigma, levels=[0.5],
+                    colors='yellow', linewidths=1.5, linestyles='--')
+            ax.contour(x_au, y_au, mask_5sigma, levels=[0.5],
+                    colors='red', linewidths=2.5, linestyles='-')
+            ax.contour(x_au, y_au, rmap, levels=[r90_au],
+                    colors='orange', linewidths=2.5, linestyles='-')
+
+            
+
+            # --- Axis labels only on outer edges ---
+            row = idx // ncols
+            col = idx % ncols
+            if col == 0:
+                ax.set_ylabel("y (AU)")
+            else:
+                ax.set_yticklabels([])
+
+            if row == nrows - 1:
+                ax.set_xlabel("x (AU)")
+            else:
+                ax.set_xticklabels([])
+
+            ax.set_title(f"robust={r}")
+
+        # Remove any unused axes
+        for j in range(len(robust_nonempty), len(axes)):
+            fig.delaxes(axes[j])
+
+        # Shared colorbar
+        cbar_ax = fig.add_axes([0.92, 0.15, 0.015, 0.7])
+        fig.colorbar(im, cax=cbar_ax, label="SNR")
+
+        # Legend
+        legend_handles = [
+            Line2D([0],[0], color='yellow', lw=1.5, ls='--', label='>3σ'),
+            Line2D([0],[0], color='red',    lw=2.5, ls='-',  label='>5σ'),
+            Line2D([0],[0], color='orange', lw=2.5, ls='-',  label=f'R90 = {r90_au:.1f} AU'),
+            Line2D([0],[0], color='red', lw=0, marker='x', markersize=8, label='Centroid')
+        ]
+        fig.legend(handles=legend_handles, loc='upper right')
+
+        plt.suptitle(f"{self.name} — Centroid maps in AU", y=0.98)
+        plt.tight_layout(rect=[0, 0, 0.9, 0.96])
+        plt.show()
 
 
     def save_snr_map_as_fits(self, robust_val="2.0", output_dir="SNR_FITS_Maps", overwrite=False):
@@ -800,7 +970,7 @@ class DiskResiduals_Median_SNR:
         ax.grid(which='both', linestyle=':', linewidth=0.5, color='gray', alpha=0.4)
         plt.show()
 
-    def source_detection_outer_only(self,  robust_val, threshold=5.0, npixels=1, connectivity=4, overwrite=False):
+    def source_detection_outer_only(self,  robust_val, threshold=5.0, npixels=1, connectivity=4, overwrite=True):
         """
         Detect high-SNR sources only outside 2 × R90 and save a catalog.
         Skips work if the output file already exists (unless overwrite=True).
