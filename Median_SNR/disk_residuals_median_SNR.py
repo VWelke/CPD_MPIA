@@ -194,113 +194,114 @@ class DiskResiduals_Median_SNR:
             return None
         else:
             raise ValueError("cube_type must be 'residual' or 'clean'")
-                    
-    def plot_profiles(self, robust_val="1.0", FOV=10.0, radius_unit="arcsec"):
+
+    def plot_profiles(self, robust_val="1.0", FOV=None, radius_unit="arcsec", use_full_fov=False, figsize=(12, 6)):
         """
-        Plot CLEAN and residual radial profiles overlaid, with radius in arcsec atm.
-        radius_unit: "arcsec" (default from GoFish), or "au"
+        Plot radial profiles.
+        - use_full_fov=False: CLEAN + residual profiles; dy shown as error bars (original style).
+        - use_full_fov=True : Full-FOV CLEAN (robust=2.0); show CLEAN as a line and dy as a separate line; no residuals.
         """
+        import numpy as np
+        import matplotlib.pyplot as plt
+
         r = self._rkey(robust_val)
         if not self.has_robust(r):
             print(f"[WARN] {self.name}: robust {r} not available — skipping plot.")
             return
-        # Get cubes
-        cube_clean = self.get_cube(r, FOV=FOV, cube_type="clean")
-        cube_resid = self.get_cube(r, FOV=FOV, cube_type="residual")
 
-        
-        # Get radial profiles (x in arcsec , y in Jy/beam, dy in Jy/beam)
-        # Assume correlated noise for the radial profile 
+        # ----- Load cubes -----
+        if use_full_fov:
+            print(f"[INFO] {self.name}: Using full FOV clean cube for robust {r}.")
+            # key point you asked for: force the full FOV clean cube read
+            cube_clean = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
+            cube_clean = self.mask_inner_region(cube_clean, factor=2.0)
+            cube_resid = None
+        else:
+            print(f"[INFO] {self.name}: Using default FOV ({FOV}\") cubes for robust {r}.")
+            cube_clean = self.get_cube(r, FOV=FOV, cube_type="clean")
+            cube_resid = self.get_cube(r, FOV=FOV, cube_type="residual")
+
+        # ----- CLEAN radial profile -----
         x_cl, y_cl, dy_cl = cube_clean.radial_profile(
-            inc=self.inc, PA=self.PA, unit='Jy/beam',assume_correlated=True, use_mad=True
-        )
-        x_res, y_res, dy_res = cube_resid.radial_profile(
-            inc=self.inc, PA=self.PA, unit='Jy/beam', assume_correlated=True, use_mad=True
+            inc=self.inc, PA=self.PA, unit='Jy/beam',
+            assume_correlated=True, use_mad=True
         )
 
-        # Convert radius unit to au if requested
+        # ----- Residual radial profile (only if not full FOV) -----
+        if (not use_full_fov) and (cube_resid is not None):
+            x_res, y_res, dy_res = cube_resid.radial_profile(
+                inc=self.inc, PA=self.PA, unit='Jy/beam',
+                assume_correlated=True, use_mad=True
+            )
+        else:
+            x_res = y_res = dy_res = None
+
+        # ----- Radius units -----
         if radius_unit == "au":
             x_cl = x_cl * self.distance_pc
-            x_res = x_res * self.distance_pc
+            if x_res is not None:
+                x_res = x_res * self.distance_pc
             xlabel = "Radius (au)"
-        # Convert gaps/rings to au
             gap_unit_factor = self.distance_pc
         else:
             xlabel = "Radius (arcsec)"
             gap_unit_factor = 1.0
 
-        # Create the plot
-        fig, ax = plt.subplots(constrained_layout=True, figsize = (12, 6))
+        # ----- Plot -----
+        fig, ax = plt.subplots(constrained_layout=True, figsize=figsize)
 
+        if use_full_fov:
+            # Full-FOV mode: line for CLEAN, line for dy (no residuals)
+            ax.plot(x_cl, y_cl, color='gray', linewidth=2, label='CLEAN')
+            ax.plot(x_cl, dy_cl, color='crimson', linewidth=2, label='dy (σ)')
+        else:
+            # Normal mode: dy as error bars (CLEAN + residual)
+            ax.plot(x_cl, y_cl, color='gray', linewidth=2, label='CLEAN')
+            ax.errorbar(x_cl, y_cl, dy_cl, fmt='none', ecolor='gray', alpha=0.5, capsize=2)
 
-        # Plot the CLEAN and residual profiles, with error bars
+            if x_res is not None:
+                ax.plot(x_res, dy_res, color='crimson', linewidth=2, label='Residual dy')
+                
 
-        # CLEAN 
-        ax.plot(x_cl, y_cl, color='gray', linewidth=2, label='CLEAN')
-        ax.errorbar(x_cl, y_cl, dy_cl, fmt='none', ecolor='gray', alpha=0.4, capsize=2)
-
-        # Residual
-        ax.plot(x_res, dy_res, color='crimson', linewidth=2, label='Residual dy')
-        #ax.errorbar(x_res, y_res, dy_res, fmt='none', ecolor='crimson', alpha=0.4 ,capsize=2)
-
-
-        # Line for R90 disk size
-        # hasattr(self, "disksize") checks if disksize is loaded
-        # Convert to correct unit
-
-        if hasattr(self, "disksize"):  
-            R90 = self.disksize["R90"] * gap_unit_factor   
-            err_low = self.disksize["R90_err_low"] * gap_unit_factor
-            err_high = self.disksize["R90_err_high"] * gap_unit_factor
+        # ----- Overlays: R90, rings, gaps -----
+        if hasattr(self, "disksize"):
+            R90 = self.disksize["R90"] * gap_unit_factor
+            err_low = self.disksize.get("R90_err_low", 0.0) * gap_unit_factor
+            err_high = self.disksize.get("R90_err_high", 0.0) * gap_unit_factor
             ax.axvline(R90, color='k', linestyle='--', label='R90')
-            ax.axvspan(R90 - err_low, R90 + err_high, color='k', alpha=0.15, label='R90 error')
-
-
-        # Band for rings and gaps
-        #
-
+            if (err_low > 0) or (err_high > 0):
+                ax.axvspan(R90 - err_low, R90 + err_high, color='k', alpha=0.15, label='R90 error')
 
         if hasattr(self, "ringgap") and self.ringgap is not None and self.ringgap.size > 0:
-            ringgap_arr = self.ringgap 
+            rg = self.ringgap
+            if rg.ndim == 1:
+                rg = rg[np.newaxis, :]
 
-            # If ringgap_arr is a 1D array, convert to 2D with one row 
-            if ringgap_arr.ndim == 1:     
-                ringgap_arr = ringgap_arr[np.newaxis, :]
-
-            # Flags to track if labels have been added
-            gap_label_added = False
-            ring_label_added = False
-
-            # Each row is [Radial_location(au)	Radial_location(arcsec)	Flag(0 for gaps, 1 for rings)	Width(au)	Width(arcsec)	Gap_depth	R_in(au)	R_in(arcsec)	R_out(au)	R_out(arcsec)
-            for row in ringgap_arr:  
-                # Use data that's already in the correct units
+            gap_added = ring_added = False
+            for row in rg:
                 if radius_unit == "au":
-                    rad = row[0]    # Column 0: radius in AU
-                    width = row[3] if not np.isnan(row[3]) else None  # Column 3: width in AU
+                    rad  = row[0]
+                    width = row[3] if not np.isnan(row[3]) else None
                 else:
-                    rad = row[1]    # Column 1: radius in arcsec  
-                    width = row[4] if not np.isnan(row[4]) else None  # Column 4: width in arcsec
+                    rad  = row[1]
+                    width = row[4] if not np.isnan(row[4]) else None
 
-                flag = int(row[2])
+                flag = int(row[2])  # 0 gap, 1 ring
+                color = '#b9fbc0' if flag == 0 else '#cdb4fe'
+                label = None
+                if flag == 0 and not gap_added:
+                    label = 'Gap'; gap_added = True
+                if flag == 1 and not ring_added:
+                    label = 'Ring'; ring_added = True
 
-                color = '#b9fbc0' if flag == 0 else '#cdb4fe'  # sage green for gaps, lavender for rings
-                
-                if flag == 0:   #
-                    label = 'Gap' if not gap_label_added else None
-                    gap_label_added = True
-                else:
-                    label = 'Ring' if not ring_label_added else None
-                    ring_label_added = True
                 ax.axvline(rad, color=color, linestyle=':', alpha=1.0, label=label)
                 if width is not None and width > 0:
                     ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
-                
-
 
         ax.set_yscale('log')
         ax.set_xlabel(xlabel)
         ax.set_ylabel('Intensity (Jy/beam)')
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)  # box outside the plot
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
         ax.set_title(f"{self.name} robust={r}")
         plt.show()
     
@@ -970,11 +971,17 @@ class DiskResiduals_Median_SNR:
         ax.grid(which='both', linestyle=':', linewidth=0.5, color='gray', alpha=0.4)
         plt.show()
 
-    def source_detection_outer_only(self,  robust_val, threshold=5.0, npixels=1, connectivity=4, overwrite=True):
+    def source_detection_outer_only(self, robust_val, threshold=5.0, connectivity=4, overwrite=True):
         """
         Detect high-SNR sources only outside 2 × R90 and save a catalog.
-        Skips work if the output file already exists (unless overwrite=True).
+        Uses beam-based min area. Always overwrites catalog (empty if none found).
         """
+
+        from astropy.table import Table
+        from astropy.io import ascii
+        from photutils.segmentation import detect_sources, deblend_sources, SourceCatalog
+        import numpy as np
+        import os
 
         rkey = self._rkey(robust_val)
         if not self.has_robust(rkey):
@@ -996,55 +1003,60 @@ class DiskResiduals_Median_SNR:
             f"source_catalog_{self.name}_robust{rkey}_thresh{thr_str}_outerOnly.txt"
         )
 
-
-        # Pixel scale
-        cube = cube = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
-        # Load CLEAN image (Full FOV)
-        image_data = np.squeeze(cube.data)  # 2D CLEAN image
-        rms = self.rms_noise_FullFOV
-
-        # Compute simple SNR map
-        snr_map = image_data / rms
-
-
-        self.snr_map_FullFOV[rkey] = snr_map # Store for later use
-
         # Skip if already done
         if (not overwrite) and os.path.exists(filename):
             print(f"  Catalog exists, skipping: {filename}")
             return filename
-        
 
+        # --- Load Full FOV CLEAN cube ---
+        cube = self.get_cube(str(robust_val), cube_type="clean", use_full_fov=True)
+        if cube is None:
+            print(f"[WARN] {self.name}: Full FOV cube missing — skipping.")
+            return filename
 
-        pixel_scale_arcsec = abs(cube.header['CDELT1']) * 3600
-        self.pixel_scale_au = pixel_scale_arcsec * self.distance_pc
-        print(f"  Pixel scale: {self.pixel_scale_au:.1f} AU/pixel")
+        # SNR map
+        image_data = np.squeeze(cube.data)  # 2D CLEAN image
+        rms = getattr(self, "rms_noise_FullFOV", None)
+        if rms is None:
+            raise ValueError("Full FOV RMS noise value not set in self.rms_noise_FullFOV")
+        snr_map = image_data / rms
+        self.snr_map_FullFOV[rkey] = snr_map  # Store for later use
 
-        # Get radial map
+        # --- Beam & pixel scale ---
+        hdr = cube.header
+        beam_x_arcsec = float(hdr['BMAJ']) * 3600.0
+        beam_y_arcsec = float(hdr['BMIN']) * 3600.0
+        pixel_scale_arcsec = abs(float(hdr['CDELT1'])) * 3600.0
+        beam_area_pix = (beam_x_arcsec * beam_y_arcsec) / (pixel_scale_arcsec ** 2)
+        npixels = int(np.ceil(beam_area_pix))
+        print(f"  Using min area = 1 beam = {npixels} pixels (beam={beam_area_pix:.2f} pix)")
+
+        # --- Radial mask: keep only r >= 2 × R90 ---
         rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
-
-        # Create mask: keep only r >= 2 × R90
         r90_arcsec = self.disksize["R90"]
         outer_mask = rmap >= (2.0 * r90_arcsec)
 
-        # Apply mask: zero out inner region
         masked_snr_map = snr_map.copy()
-        masked_snr_map[~outer_mask] = 0.0  
+        masked_snr_map[~outer_mask] = 0.0
 
-        # Detect sources
+        # --- Detect ---
         segm = detect_sources(masked_snr_map, threshold, npixels=npixels, connectivity=connectivity)
         if segm is None:
             print(f"  No sources detected above {threshold}σ beyond 2×R90")
+            empty_catalog = Table(names=['id','xcentroid','ycentroid','area','max_value','sum','radius_au'])
+            ascii.write(empty_catalog, filename, format='commented_header', overwrite=True)
+            print(f"  Saved EMPTY source catalog to {filename}")
             return filename
 
         segm = deblend_sources(masked_snr_map, segm, npixels=npixels, connectivity=connectivity)
         print(f"  Detected {segm.nlabels} sources beyond 2×R90")
 
+        # --- Build catalog ---
         catalog = SourceCatalog(masked_snr_map, segm).to_table()
-        keep = [c for c in ['id', 'xcentroid', 'ycentroid', 'area', 'max_value', 'sum'] if c in catalog.colnames]
+        keep = [c for c in ['id','xcentroid','ycentroid','area','max_value','sum'] if c in catalog.colnames]
         catalog = catalog[keep]
 
-        # Compute radii in AU
+        # Radii in AU
         radius_au = []
         for i in range(len(catalog)):
             x_pix = int(round(catalog['xcentroid'][i]))
@@ -1052,7 +1064,32 @@ class DiskResiduals_Median_SNR:
             radius_au.append(float(rmap[y_pix, x_pix] * self.distance_pc))
         catalog['radius_au'] = radius_au
 
-        # Save
         ascii.write(catalog, filename, format='commented_header', overwrite=True)
         print(f"  Saved outer-only source catalog to {filename}")
         return filename
+    
+
+
+
+    #########################
+    #---Full FOV images----#
+    ######################### 
+
+    def mask_inner_region(self, cube, factor=2.0):
+        """
+        Mask the inner region of a cube where r < factor × R90.
+        Returns the cube with NaN in the masked region.
+        """
+        # Deprojected radial map in arcsec
+        rmap_arcsec = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
+
+        # Outer mask
+        r90_arcsec = self.disksize["R90"]
+        outer_mask = rmap_arcsec >= (factor * r90_arcsec)
+
+        # Apply mask
+        data = np.squeeze(cube.data).copy()
+        data[~outer_mask] = np.nan  
+        cube.data = data
+
+        return cube
