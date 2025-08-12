@@ -484,62 +484,82 @@ class DiskResiduals_Median_SNR:
                         f"source_catalog_{disk_name}_robust{rkey}_thresh5p0.txt")
         return os.path.exists(p3) and os.path.exists(p5)
 
-    def source_detection(self, snr_map, robust_val, threshold=5.0, npixels=1, connectivity=4, overwrite=True):
+    def source_detection(self,  robust_val,
+                        threshold=5.0, npixels=1, connectivity=4,
+                        overwrite=True, use_full_fov=False):
         """
         Detect high-SNR sources and save a catalog.
+        - When use_full_fov=False: uses residual cube/header and saves standard catalog.
+        - When use_full_fov=True : uses Full-FOV CLEAN cube/header and saves a *_FullFOV_ catalog.
         Skips work if the output file already exists (unless overwrite=True).
         """
 
         rkey = self._rkey(robust_val)
-        if not self.has_robust(rkey):
+
+        # Allow full-FOV runs even if residuals are missing
+        if (not use_full_fov) and (not self.has_robust(rkey)):
             print(f"[WARN] {self.name}: robust {rkey} not available — skipping detection.")
             return None
-        thr_str = str(threshold).replace('.', 'p')
 
-        # Output path
+        thr_str = str(threshold).replace('.', 'p')
+        suffix  = "_FullFOV" if use_full_fov else ""
+
+        # ------- Output path -------
         output_base = "Disk_Residual_Profile_Median_SNR"
         disk_output_dir = os.path.join(output_base, self.name, f"robust_{rkey}")
         os.makedirs(disk_output_dir, exist_ok=True)
         filename = os.path.join(
             disk_output_dir,
-            f"source_catalog_{self.name}_robust{rkey}_thresh{thr_str}.txt"
+            f"source_catalog_{self.name}{suffix}_robust{rkey}_thresh{thr_str}.txt"
         )
 
-        # Skip if already done
         if (not overwrite) and os.path.exists(filename):
             print(f"  Catalog exists, skipping: {filename}")
             return filename
 
-        # Pixel scale (info)
-        cube = self.get_cube(rkey, cube_type="residual")
+        # ------- Choose cube for header / coords -------
+        if use_full_fov:
+            # Full-FOV CLEAN cube (robust 2.0 file name handled in get_cube)
+            cube = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
+            cube = self.mask_inner_region(cube, factor=2.0)  # Mask inner region for full FOV
+            if cube is None:
+                print(f"[WARN] {self.name}: Full-FOV cube missing — skipping detection.")
+                return None
+            snr_map = self.snr_map_FullFOV.get(rkey, None)
+                
+        else:
+            cube = self.get_cube(rkey, cube_type="residual")
+            if cube is None:
+                print(f"[WARN] {self.name}: residual cube missing — skipping detection.")
+                return None
+            # If caller didn't pass snr_map, try stored one
+            snr_map = self.snr_maps.get(rkey, None)
+            
+
+        # ------- Beam / pixel scale -> area in pixels -------
         hdr = cube.header
-        if 'BMAJ' in hdr and 'BMIN' in hdr:  # CASA convention: degrees
-            beam_x_arcsec = float(hdr['BMAJ']) * 3600.0
-            beam_y_arcsec = float(hdr['BMIN']) * 3600.0
+        # CASA header: BMAJ/BMIN in degrees; CDELT in degrees/pixel
+        beam_x_arcsec = float(hdr['BMAJ']) * 3600.0 if 'BMAJ' in hdr else None
+        beam_y_arcsec = float(hdr['BMIN']) * 3600.0 if 'BMIN' in hdr else None
+        if beam_x_arcsec is None or beam_y_arcsec is None:
+            # Fallback: keep user npixels
+            beam_area_pix = None
+            print("  [WARN] Missing BMAJ/BMIN; using provided npixels =", npixels)
+        else:
+            pixel_scale_arcsec = abs(float(hdr.get('CDELT1', hdr.get('CDELT2')))) * 3600.0
+            beam_area_pix = (beam_x_arcsec * beam_y_arcsec) / (pixel_scale_arcsec ** 2)
+            npixels = int(np.ceil(beam_area_pix))
+            print(f"  Using min area = 1 beam = {npixels} pixels (beam={beam_area_pix:.2f} pix)")
 
-        if 'CDELT1' in hdr:
-            pixel_scale_arcsec = abs(float(hdr['CDELT1'])) * 3600.0
-        elif 'CDELT2' in hdr:
-            pixel_scale_arcsec = abs(float(hdr['CDELT2'])) * 3600.0
-
-        beam_area_pix = (beam_x_arcsec * beam_y_arcsec) / (pixel_scale_arcsec ** 2)
-        npixels = int(np.ceil(beam_area_pix))
-
-        print(f"  Using min area = 1 beam = {npixels} pixels (beam={beam_area_pix:.2f} pix)")
-
+        # ------- Detect & deblend -------
         segm = detect_sources(snr_map, threshold, npixels=npixels, connectivity=connectivity)
 
-        # Detect
-        #segm = detect_sources(snr_map, threshold, npixels=npixels, connectivity=connectivity)
         if segm is None:
             print(f"  No sources detected above {threshold}σ")
-            # Optional: create an empty file so future runs also skip
-            # ascii.write(Table(), filename, format='commented_header', overwrite=True)
             empty_catalog = Table(names=['id','xcentroid','ycentroid','area','max_value','sum','radius_au'])
             ascii.write(empty_catalog, filename, format='commented_header', overwrite=True)
             print(f"  Saved EMPTY source catalog to {filename}")
             return filename
-            
 
         segm = deblend_sources(snr_map, segm, npixels=npixels, connectivity=connectivity)
         print(f"  Detected {segm.nlabels} sources")
@@ -548,8 +568,8 @@ class DiskResiduals_Median_SNR:
         keep = [c for c in ['id','xcentroid','ycentroid','area','max_value','sum'] if c in catalog.colnames]
         catalog = catalog[keep]
 
-        # Radii in AU
-        rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
+        # ------- Radii in AU (using same cube for coords) -------
+        rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]  # arcsec
         radius_au = []
         for i in range(len(catalog)):
             x_pix = int(round(catalog['xcentroid'][i]))
@@ -990,6 +1010,7 @@ class DiskResiduals_Median_SNR:
 
         # --- Load Full FOV CLEAN cube ---
         cube = self.get_cube(str(robust_val), cube_type="clean", use_full_fov=True)
+        cube = self.mask_inner_region(cube, factor=2.0)  # Mask inner region for full FOV
         if cube is None:
             print(f"[WARN] {self.name}: Full FOV cube missing — skipping.")
             return filename
