@@ -734,7 +734,8 @@ class DiskResiduals_Median_SNR:
         for r in robust_values:
             rkey = self._rkey(r)
             if catalog_suffix:
-                fname = f"source_catalog_{self.name}_robust{rkey}_{catalog_suffix}_thresh{thr_str}.txt"
+                fname = f"source_catalog_{self.name}_{catalog_suffix}_robust{rkey}_thresh{thr_str}.txt"
+    
             else:
                 fname = f"source_catalog_{self.name}_robust{rkey}_thresh{thr_str}.txt"
 
