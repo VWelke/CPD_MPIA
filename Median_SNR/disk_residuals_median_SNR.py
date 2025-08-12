@@ -44,8 +44,10 @@ class DiskResiduals_Median_SNR:
         self.residuals = {}  # Dict to store {Briggs index value: FITS data}
         self.clean_images = {}   # Dict to store {Briggs index value: FITS data} for CLEAN images
         self.clean_profile = None  # Dict to store {Briggs index value: profile data}, currently None
+        
         self.sigma_masks = {}
         self.snr_maps = {}  # Dict to store SNR maps for each robust value
+        self.sigma_masks_FullFOV = {}
         self.snr_map_FullFOV = {}
 
     #---------------------
@@ -310,7 +312,7 @@ class DiskResiduals_Median_SNR:
     # Standard Deviation Methods
     #------------------------------
 
-    def create_sigma_mask(self, robust_val="1.0", scale_factor=1.0, save_fits=False):
+    def create_sigma_mask(self, robust_val="1.0", scale_factor=1.0, save_fits=False, use_full_fov=False):
         """
         Create a 2D sigma mask from the radial profile standard deviation.
         
@@ -330,8 +332,12 @@ class DiskResiduals_Median_SNR:
             return None, None
 
         # Load the residual cube
-        cube = self.get_cube(r, cube_type="residual")
-        
+        if use_full_fov:
+            cube = self.get_cube(r, cube_type="clean", use_full_fov=True)
+            cube = self.mask_inner_region(cube, factor=2.0)  # Mask inner region for full FOV
+        else:
+            cube = self.get_cube(r, cube_type="residual")
+            
         
         # Get radial profile with assume_correlated=False 
         # so that dy is simple the standard deviation per bin
@@ -349,14 +355,15 @@ class DiskResiduals_Median_SNR:
         output_base = "Disk_Residual_Profile_Median_SNR"
         disk_output_dir = os.path.join(output_base, self.name)
         os.makedirs(disk_output_dir, exist_ok=True)
-        
-        profile_filename = os.path.join(disk_output_dir, f"{self.name}_residual_radial_profile_robust{r}.txt")
+    
 
-        np.savetxt(
-            profile_filename,
-            np.column_stack([x, y, dy]),
-            header="radius [arcsec] intensity [Jy/beam] standard deviation [Jy/beam]"
+        suffix = "_FullFOV" if use_full_fov else ""
+        profile_filename = os.path.join(
+            disk_output_dir,
+            f"{self.name}_residual_radial_profile{suffix}_robust{r}.txt"
         )
+        np.savetxt(profile_filename, np.column_stack([x, y, dy]),
+                header="radius [arcsec] intensity [Jy/beam] standard deviation [Jy/beam]")
         
         # Get 2D radius map
         # cube.disk_coords return a tuple of (rmap, theta_map, zmap)
@@ -380,23 +387,21 @@ class DiskResiduals_Median_SNR:
             sigma_2d[bin_index == i] = dy[i] * scale_factor  # Assign the sigma value to the corresponding pixels
 
         # Store in object
-        self.sigma_masks[r] = sigma_2d
+        if use_full_fov:
+            self.sigma_masks_FullFOV[r] = sigma_2d
+        else:
+            self.sigma_masks[r] = sigma_2d
 
         # Save as FITS if requested into another subfolder
 
-
-        if save_fits:
-            fits_filename = f"{self.name}_sigma_mask_robust{r}.fits"
-            if scale_factor != 1.0:
-                fits_filename = f"{self.name}_sigma_mask_{scale_factor}sigma_robust{r}.fits"
-
-            fits_path = os.path.join(disk_output_dir, fits_filename)
-            fits.writeto(fits_path, sigma_2d, cube.header, overwrite=True)  # sigma_2d is 2D array, cube.header is the header from the residual cube
-            print(f"Saved sigma mask: {fits_path}")
         
+        if save_fits:
+            suffix = "_FullFOV" if use_full_fov else ""
+            fits_filename = f"{self.name}_sigma_mask{suffix}_robust{r}.fits"
+            fits_path = os.path.join("Disk_Residual_Profile_Median_SNR", self.name, fits_filename)
+            os.makedirs(os.path.dirname(fits_path), exist_ok=True)
+            fits.writeto(fits_path, sigma_2d, cube.header, overwrite=True)
 
-        # Store the sigma mask in the object
-        self.sigma_mask = sigma_2d
 
 
         return sigma_2d, (x, y, dy)
@@ -404,32 +409,32 @@ class DiskResiduals_Median_SNR:
 
 
 
+    def plot_sigma_comparison(self, robust_val="1.0", scale_factor=1.0, use_full_fov=False):
+        # Build (or fetch) sigma
+        sigma_2d, _ = self.create_sigma_mask(
+            robust_val=robust_val, scale_factor=scale_factor, save_fits=False, use_full_fov=use_full_fov
+        )
+        if sigma_2d is None:
+            return
 
+        # Load the matching image (residual vs full-FOV clean)
+        if use_full_fov:
+            cube = self.get_cube(robust_val, cube_type="clean", use_full_fov=True)
+            cube = self.mask_inner_region(cube, factor=2.0)
+            title_left = f"{self.name} Full FOV CLEAN (robust={robust_val})"
+        else:
+            cube = self.get_cube(robust_val, cube_type="residual")
+            title_left = f"{self.name} Residual (robust={robust_val})"
 
-    def plot_sigma_comparison(self, robust_val="1.0", scale_factor=1.0):
-        """
-        Plot original residual image alongside the sigma mask.
-        """
-        # Create sigma mask
-    
-        sigma_2d, _ = self.create_sigma_mask(robust_val, scale_factor, save_fits=False)
-        
-        # Load original data
-        cube = self.get_cube(robust_val, cube_type="residual")
-        orig_data = cube.data
-        
-        # Plot side by side
+        orig_data = np.squeeze(cube.data)
+
         fig, axes = plt.subplots(1, 2, figsize=(12, 5), constrained_layout=True)
-        
         im0 = axes[0].imshow(orig_data, origin='lower', cmap='inferno')
-        axes[0].set_title(f"{self.name} Original Residual (robust={robust_val})")
-        plt.colorbar(im0, ax=axes[0], label='Jy/beam')
-        
-        im1 = axes[1].imshow(sigma_2d, origin='lower', cmap='viridis')
-        axes[1].set_title(f"{self.name} {scale_factor}σ Mask")
-        plt.colorbar(im1, ax=axes[1], label=f'{scale_factor}σ (Jy/beam)')
+        axes[0].set_title(title_left); plt.colorbar(im0, ax=axes[0], label='Jy/beam')
 
-        
+        im1 = axes[1].imshow(sigma_2d, origin='lower', cmap='viridis')
+        lbl = f"{scale_factor}σ Mask"
+        axes[1].set_title(f"{self.name} {lbl}"); plt.colorbar(im1, ax=axes[1], label=f'{lbl} (Jy/beam)')
         plt.show()
 
 
@@ -442,44 +447,30 @@ class DiskResiduals_Median_SNR:
     #---------------------------------------------
 
 
-    def create_snr_map(self, robust_val="1.0"):
-        """
-        Create SNR map for THIS disk and store it in the object.
-        """
-        import warnings
-
-        # Normalize key
+    def create_snr_map(self, robust_val="1.0", use_full_fov=False):
         r = self._rkey(robust_val)
-        if not self.has_robust(r):
-            print(f"[WARN] {self.name}: robust {r} not available — skipping SNR.")
+        if use_full_fov:
+            sigma_2d = self.sigma_masks_FullFOV.get(r)
+            cube = self.get_cube(r, cube_type="clean", use_full_fov=True)
+            cube = self.mask_inner_region(cube, factor=2.0)  # Mask inner region for full FOV
+        else:
+            sigma_2d = self.sigma_masks.get(r)
+            cube = self.get_cube(r, cube_type="residual")
+
+        if sigma_2d is None or cube is None:
             return None
 
-        if r in self.snr_maps:
-            return self.snr_maps[r]
+        residual_data = np.squeeze(cube.data)
+        snr_map = residual_data / sigma_2d
+        snr_map[sigma_2d == 0] = 0
+        snr_map[~np.isfinite(snr_map)] = 0
 
-        try:
-            sigma_2d = self.sigma_masks[r]
-            residual_data = self.residuals[r]
-
-            residual_data = np.squeeze(residual_data) 
-
-            print(f"  {self.name}: Sigma shape: {sigma_2d.shape}, Residual shape: {residual_data.shape}")
-
-            if sigma_2d.shape != residual_data.shape:
-                raise ValueError(f"Dimension mismatch: sigma {sigma_2d.shape} vs residual {residual_data.shape}")
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", RuntimeWarning)
-                snr_map = residual_data / sigma_2d
-                snr_map[sigma_2d == 0] = 0
-                snr_map[~np.isfinite(snr_map)] = 0
-
+        if use_full_fov:
+            self.snr_map_FullFOV[r] = snr_map
+        else:
             self.snr_maps[r] = snr_map
-            return snr_map
 
-        except Exception as e:
-            print(f"  Error creating SNR map for {self.name}: {e}")
-            return None
+        return snr_map
         
     
     #---------------------------------------------
@@ -842,36 +833,24 @@ class DiskResiduals_Median_SNR:
         plt.show()
 
 
-    def save_snr_map_as_fits(self, robust_val="2.0", output_dir="SNR_FITS_Maps", overwrite=False):
-        """
-        Save the 2D SNR map as a FITS file using the (trimmed) header from the residual map.
-        Skips if SNR/cube/header/shape are missing or inconsistent. Returns output path or None.
-        """
-        # Normalize robust token consistently with the rest of your code
-        rkey = self._rkey(robust_val) if hasattr(self, "_rkey") else f"{float(robust_val):.1f}"
-
-        # Build output path to skip heavy work if file exists
+    def save_snr_map_as_fits(self, robust_val="2.0", output_dir="SNR_FITS_Maps",
+                         overwrite=False, use_full_fov=False):
+        rkey = self._rkey(robust_val)
         os.makedirs(output_dir, exist_ok=True)
-        outname = os.path.join(output_dir, f"{self.name}_SNR_robust{rkey}.fits")
-
-        # Early skip if file already exists
+        suffix = "_FullFOV" if use_full_fov else ""
+        outname = os.path.join(output_dir, f"{self.name}_SNR{suffix}_robust{rkey}.fits")
         if (not overwrite) and os.path.exists(outname):
-            print(f"[SKIP] {self.name}: {outname} already exists.")
-            return outname
+            print(f"[SKIP] {self.name}: {outname} already exists."); return outname
 
-        # Get SNR (build if needed)
-        snr_map = self.snr_maps.get(rkey)
-        if snr_map is None and hasattr(self, "create_snr_map"):
-            snr_map = self.create_snr_map(rkey)
+        snr_map = (self.snr_map_FullFOV if use_full_fov else self.snr_maps).get(rkey)
         if snr_map is None:
-            print(f"[SKIP] {self.name}: robust {rkey} — no SNR map.")
-            return None
+            snr_map = self.create_snr_map(rkey, use_full_fov=use_full_fov)
+        if snr_map is None: return None
 
-        # Residual cube/header
-        cube = self.get_cube(rkey, cube_type="residual")
-        if cube is None or getattr(cube, "header", None) is None:
-            print(f"[SKIP] {self.name}: robust {rkey} — no residual cube/header.")
-            return None
+        cube = self.get_cube("2.0" if use_full_fov else rkey,
+                            cube_type="clean" if use_full_fov else "residual",
+                            use_full_fov=use_full_fov)
+        if cube is None or getattr(cube, "header", None) is None: return None
         header = cube.header.copy()
 
         # Shape guard (FITS is [NAXIS2, NAXIS1])
@@ -902,6 +881,7 @@ class DiskResiduals_Median_SNR:
         fits.writeto(outname, np.asarray(snr_map, dtype=np.float32), header, overwrite=True)
         print(f"[OK]  {self.name}: saved {outname}")
         return outname
+    
     
 
  
