@@ -547,7 +547,7 @@ class DiskResiduals_Median_SNR:
             print("  [WARN] Missing BMAJ/BMIN; using provided npixels =", npixels)
         else:
             pixel_scale_arcsec = abs(float(hdr.get('CDELT1', hdr.get('CDELT2')))) * 3600.0
-            beam_area_pix = (beam_x_arcsec * beam_y_arcsec) / (pixel_scale_arcsec ** 2)
+            beam_area_pix = (beam_x_arcsec * beam_y_arcsec) / (pixel_scale_arcsec ** 2)  
             npixels = int(np.ceil(beam_area_pix))
             print(f"  Using min area = 1 beam = {npixels} pixels (beam={beam_area_pix:.2f} pix)")
 
@@ -565,7 +565,7 @@ class DiskResiduals_Median_SNR:
         print(f"  Detected {segm.nlabels} sources")
 
         catalog = SourceCatalog(snr_map, segm).to_table()
-        keep = [c for c in ['id','xcentroid','ycentroid','area','max_value','sum'] if c in catalog.colnames]
+        keep = [c for c in ['id','label','xcentroid','ycentroid','area','max_value','sum'] if c in catalog.colnames]
         catalog = catalog[keep]
 
         # ------- Radii in AU (using same cube for coords) -------
@@ -576,6 +576,22 @@ class DiskResiduals_Median_SNR:
             y_pix = int(round(catalog['ycentroid'][i]))
             radius_au.append(float(rmap[y_pix, x_pix] * self.distance_pc))
         catalog['radius_au'] = radius_au
+
+        # add two columns of flux  summed up over the number of pixels in the beam
+
+        # --- Use correct label column ---
+        label_col = 'id' if 'id' in catalog.colnames else 'label'
+
+        flux_Jy = []
+        for label in catalog[label_col]:
+            mask = segm.data == label  # Boolean mask for this source
+
+            # sigma is in Jy/beam so the total Jy is sigma/number of pixels per beam
+            flux_pixels = snr_map[mask] * self.sigma_masks_FullFOV[rkey][mask]
+            flux_Jy.append(np.sum(flux_pixels)/beam_area_pix)
+
+        catalog['flux_Jy'] = flux_Jy
+        catalog['flux_uJy'] = np.array(flux_Jy) * 1e6  # Convert Jy to μJy
 
         ascii.write(catalog, filename, format='commented_header', overwrite=True)
         print(f"  Saved source catalog to {filename}")
