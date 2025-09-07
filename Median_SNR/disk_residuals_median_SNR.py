@@ -16,6 +16,7 @@ from pathlib import Path
 from matplotlib import cm, colors
 import matplotlib.ticker as mtick
 from matplotlib.lines import Line2D
+import matplotlib.patches as mpatches
 import math
 
 # Source detection
@@ -822,6 +823,18 @@ class DiskResiduals_Median_SNR:
             ax.scatter((cat['xcentroid'] - nx/2) * pixscale_au,
                     (cat['ycentroid'] - ny/2) * pixscale_au,
                     marker='x', s=90, linewidths=2.0, color='red')
+            
+            for i in range(len(cat)):
+                x = (cat['xcentroid'][i] - nx/2) * pixscale_au
+                y = (cat['ycentroid'][i] - ny/2) * pixscale_au
+                if 'max_value' in cat.colnames and cat['max_value'][i] > 5:
+                    # Draw a thick green square centered at (x, y)
+                    size = 100 * pixscale_au   # AU, adjust as needed for your image scale
+                    rect = mpatches.Rectangle(
+                        (x - size/2, y - size/2), size, size,
+                        linewidth=2.5, edgecolor='lime', facecolor='none', zorder=10
+                    )
+                    ax.add_patch(rect)
 
             # Contours
             ax.contour(x_au, y_au, mask_3sigma, levels=[0.5],
