@@ -577,6 +577,7 @@ class DiskResiduals_Median_SNR:
             y_pix = int(round(catalog['ycentroid'][i]))
             radius_au.append(float(rmap[y_pix, x_pix] * self.distance_pc))
         catalog['radius_au'] = radius_au
+        
 
         # add two columns of flux  summed up over the number of pixels in the beam
 
