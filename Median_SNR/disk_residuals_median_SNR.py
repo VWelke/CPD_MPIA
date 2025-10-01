@@ -549,6 +549,8 @@ class DiskResiduals_Median_SNR:
         else:
             pixel_scale_arcsec = abs(float(hdr.get('CDELT1', hdr.get('CDELT2')))) * 3600.0
             beam_area_pix = (beam_x_arcsec * beam_y_arcsec) / (pixel_scale_arcsec ** 2)  
+            beam_area_pix_true = (np.pi / (4.0 * np.log(2.0))) * \
+                     (beam_x_arcsec * beam_y_arcsec) / (pixel_scale_arcsec ** 2)
             npixels = int(np.ceil(beam_area_pix))
             print(f"  Using min area = 1 beam = {npixels} pixels (beam={beam_area_pix:.2f} pix)")
 
@@ -577,7 +579,7 @@ class DiskResiduals_Median_SNR:
             y_pix = int(round(catalog['ycentroid'][i]))
             radius_au.append(float(rmap[y_pix, x_pix] * self.distance_pc))
         catalog['radius_au'] = radius_au
-        
+         
 
         # add two columns of flux  summed up over the number of pixels in the beam
 
@@ -585,15 +587,56 @@ class DiskResiduals_Median_SNR:
         label_col = 'id' if 'id' in catalog.colnames else 'label'
 
         flux_Jy = []
-        for label in catalog[label_col]:
-            mask = segm.data == label  # Boolean mask for this source
+        flux_uJy = []
+        peak_uJy_per_beam = []
+        sigma_uJy_per_beam = []
+        sigma_flux_uJy = []
 
-            # sigma is in Jy/beam so the total Jy is sigma/number of pixels per beam
-            flux_pixels = snr_map[mask] * self.sigma_masks_FullFOV[rkey][mask]
-            flux_Jy.append(np.sum(flux_pixels)/beam_area_pix)
+        # --- Load radial profile once (outside the loop) ---
+        profile_file = os.path.join(
+             "Disk_Residual_Profile_Median_SNR", self.name,
+            f"{self.name}_residual_radial_profile_FullFOV_robust{rkey}.txt"
+        )
+        prof = np.genfromtxt(profile_file, comments="#")
+        radii_arcsec = prof[:, 0]
+        sigma_prof_jybeam = prof[:, 2]   # [Jy/beam]
 
+        # --- Loop over detected sources ---
+        for i, label in enumerate(catalog[label_col]):
+            mask = (segm.data == label)
+
+            # Convert SNR × sigma-map back to Jy/beam
+            sigma_map = self.sigma_masks_FullFOV[rkey] if use_full_fov else self.sigma_masks[rkey]
+            I_jy_per_beam = snr_map[mask] * sigma_map[mask]
+
+            # Peak flux density (µJy/beam)
+            peak_val = np.nanmax(I_jy_per_beam) * 1e6
+            peak_uJy_per_beam.append(peak_val)
+
+            # Integrated flux
+            F_Jy = np.nansum(I_jy_per_beam) / beam_area_pix_true
+            flux_Jy.append(F_Jy)
+            flux_uJy.append(F_Jy * 1e6)
+
+            # Cross-match radius → sigma profile
+            r_arcsec = catalog['radius_au'][i] / self.distance_pc
+            idx = np.nanargmin(np.abs(radii_arcsec - r_arcsec))
+            sigma_beam_Jy = sigma_prof_jybeam[idx]
+
+            # Local RMS noise (µJy/beam)
+            sigma_uJy_per_beam.append(sigma_beam_Jy * 1e6)
+
+            # Integrated flux uncertainty (µJy)
+            N_pix = np.count_nonzero(mask)
+            N_beams = N_pix / beam_area_pix_true
+            sigma_flux_uJy.append(sigma_beam_Jy * 1e6 * np.sqrt(N_beams))
+
+        # --- Add columns ---
         catalog['flux_Jy'] = flux_Jy
-        catalog['flux_uJy'] = np.array(flux_Jy) * 1e6  # Convert Jy to μJy
+        catalog['flux_uJy'] = flux_uJy
+        catalog['peak_uJy_per_beam'] = peak_uJy_per_beam
+        catalog['sigma_uJy_per_beam'] = sigma_uJy_per_beam
+        catalog['sigma_flux_uJy'] = sigma_flux_uJy
 
         ascii.write(catalog, filename, format='commented_header', overwrite=True)
         print(f"  Saved source catalog to {filename}")
@@ -1125,3 +1168,57 @@ class DiskResiduals_Median_SNR:
         cube.data = data
 
         return cube
+    
+    # Get sigma at a specific radius for a given disk
+
+    def set_beam_area_sr(self, robust_val="2.0", use_full_fov=False):
+        """
+        Extracts beam area from the FITS header and stores it as self.beam_area_sr (steradians).
+        """
+        cube = self.get_cube(robust_val, cube_type="residual", use_full_fov=use_full_fov)
+        hdr = cube.header
+        # BMAJ/BMIN in degrees; 1 deg = 3600 arcsec; 1 arcsec = 4.84814e-6 radians
+        bmaj_deg = float(hdr['BMAJ'])
+        bmin_deg = float(hdr['BMIN'])
+        bmaj_rad = bmaj_deg * np.pi / 180
+        bmin_rad = bmin_deg * np.pi / 180
+        # Beam area in steradians: π/(4*ln2) × BMAJ × BMIN
+        beam_area_sr = np.pi / (4 * np.log(2)) * bmaj_rad * bmin_rad
+        self.beam_area_sr = beam_area_sr
+        print(f"[INFO] {self.name}: Beam area set to {beam_area_sr:.2e} sr")
+
+
+    def get_sigma_at_radius(self, radius_au, robust_val="2.0", use_full_fov=True, save_dict=None, return_unit="uJy"):
+        """
+        Returns the standard deviation at a given radius (AU) for this disk.
+        Uses self.beam_area_sr (must be set first).
+        Optionally saves result in a dictionary: save_dict[(disk_name, radius_au)] = sigma
+        Set return_unit="Jy" for Jy, "uJy" for microJy.
+        """
+        if not hasattr(self, "beam_area_sr"):
+            raise ValueError("Beam area not set. Run set_beam_area_sr() first.")
+
+        radius_arcsec = radius_au / self.distance_pc
+        suffix = "_FullFOV" if use_full_fov else ""
+        sigma_file = f"Median_SNR/Disk_Residual_Profile_Median_SNR/{self.name}/{self.name}_residual_radial_profile{suffix}_robust{robust_val}.txt"
+        if not os.path.exists(sigma_file):
+            raise FileNotFoundError(f"File not found: {sigma_file}")
+
+        data = np.genfromtxt(sigma_file, comments="#")
+        radii_arcsec = data[:, 0]
+        sigma_jybeam = data[:, 2]
+
+        idx = np.nanargmin(np.abs(radii_arcsec - radius_arcsec))
+        sigma_jybeam_at_r = sigma_jybeam[idx]
+        sigma_jy = sigma_jybeam_at_r * self.beam_area_sr
+
+        if return_unit == "uJy":
+            sigma = sigma_jy * 1e6
+        else:
+            sigma = sigma_jy
+
+        # Optionally save to dictionary
+        if save_dict is not None:
+            save_dict[(self.name, radius_au)] = sigma
+
+        return sigma
