@@ -638,7 +638,7 @@ class DiskResiduals_Median_SNR:
         catalog['sigma_uJy_per_beam'] = sigma_uJy_per_beam
         catalog['sigma_flux_uJy'] = sigma_flux_uJy
 
-        ascii.write(catalog, filename, format='commented_header', overwrite=True)
+        ascii.write(catalog, filename, format='csv', overwrite=True)
         print(f"  Saved source catalog to {filename}")
         return filename
 
