@@ -1,6 +1,13 @@
 # Data files
 *.fits
 *.txt
+*.pkl
 
 # Output directories  
 Disk_Residual_Profile/
+
+
+# pkl
+Median_SNR/all_disks.pkl
+Median_SNR/disk_obj.pkl
+disk_obj.pkl
