@@ -620,7 +620,7 @@ class DiskResiduals_Median_SNR:
 
             # Cross-match radius → sigma profile
             r_arcsec = catalog['radius_au'][i] / self.distance_pc
-            idx = np.nanargmin(np.abs(radii_arcsec - r_arcsec))
+            idx = np.nanargmin(np.abs(radii_arcsec - r_arcsec)) # closest to 
             sigma_beam_Jy = sigma_prof_jybeam[idx]
 
             # Local RMS noise (µJy/beam)
@@ -1188,37 +1188,24 @@ class DiskResiduals_Median_SNR:
         print(f"[INFO] {self.name}: Beam area set to {beam_area_sr:.2e} sr")
 
 
-    def get_sigma_at_radius(self, radius_au, robust_val="2.0", use_full_fov=True, save_dict=None, return_unit="uJy"):
+    def get_sigma_at_radius(self, radius_au, robust_val="2.0", use_full_fov=True):
         """
-        Returns the standard deviation at a given radius (AU) for this disk.
-        Uses self.beam_area_sr (must be set first).
-        Optionally saves result in a dictionary: save_dict[(disk_name, radius_au)] = sigma
-        Set return_unit="Jy" for Jy, "uJy" for microJy.
+        Returns the standard deviation (RMS noise) at a given radius (AU) for this disk in μJy.
         """
-        if not hasattr(self, "beam_area_sr"):
-            raise ValueError("Beam area not set. Run set_beam_area_sr() first.")
 
         radius_arcsec = radius_au / self.distance_pc
         suffix = "_FullFOV" if use_full_fov else ""
-        sigma_file = f"Median_SNR/Disk_Residual_Profile_Median_SNR/{self.name}/{self.name}_residual_radial_profile{suffix}_robust{robust_val}.txt"
-        if not os.path.exists(sigma_file):
-            raise FileNotFoundError(f"File not found: {sigma_file}")
+        sigma_file = os.path.join(
+            "Disk_Residual_Profile_Median_SNR", self.name,
+            f"{self.name}_residual_radial_profile{suffix}_robust{robust_val}.txt"
+        )
 
-        data = np.genfromtxt(sigma_file, comments="#")
-        radii_arcsec = data[:, 0]
-        sigma_jybeam = data[:, 2]
+        prof = np.genfromtxt(sigma_file, comments="#")
+        radii_arcsec = prof[:, 0] # first column: radius in arcsec
+        sigma_prof_jybeam = prof[:, 2]   # [Jy/beam], second column: sigma in Jy/beam
 
-        idx = np.nanargmin(np.abs(radii_arcsec - radius_arcsec))
-        sigma_jybeam_at_r = sigma_jybeam[idx]
-        sigma_jy = sigma_jybeam_at_r * self.beam_area_sr
+        idx = np.nanargmin(np.abs(radii_arcsec - radius_arcsec)) # closest to requested radius
+        sigma_beam_Jy = sigma_prof_jybeam[idx] # in Jy/beam 
+        sigma_beam_uJy = sigma_beam_Jy * 1e6  # convert to μJy/beam
 
-        if return_unit == "uJy":
-            sigma = sigma_jy * 1e6
-        else:
-            sigma = sigma_jy
-
-        # Optionally save to dictionary
-        if save_dict is not None:
-            save_dict[(self.name, radius_au)] = sigma
-
-        return sigma
+        return sigma_beam_uJy
