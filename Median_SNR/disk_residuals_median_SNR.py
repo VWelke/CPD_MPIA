@@ -1196,6 +1196,7 @@ class DiskResiduals_Median_SNR:
         radius_arcsec = radius_au / self.distance_pc
         suffix = "_FullFOV" if use_full_fov else ""
         sigma_file = os.path.join(
+            r"D:\CPD_MPIA\Median_SNR",  # Add the base directory
             "Disk_Residual_Profile_Median_SNR", self.name,
             f"{self.name}_residual_radial_profile{suffix}_robust{robust_val}.txt"
         )
