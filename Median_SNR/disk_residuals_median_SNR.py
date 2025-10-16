@@ -24,6 +24,11 @@ from photutils.segmentation import detect_sources, deblend_sources
 from photutils.segmentation import SourceCatalog
 from astropy.io import ascii  # ascii for saving source properties
 from astropy.table import Table
+from astropy.wcs import WCS
+from astropy.coordinates import SkyCoord
+import astropy.units as u
+
+
 class DiskResiduals_Median_SNR:
 
     #---------------------
@@ -573,11 +578,33 @@ class DiskResiduals_Median_SNR:
 
         # ------- Radii in AU (using same cube for coords) -------
         rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]  # arcsec
+
+        wcs = WCS(cube.header).celestial
+        ra_list = []
+        dec_list = []
         radius_au = []
+        
         for i in range(len(catalog)):
-            x_pix = int(round(catalog['xcentroid'][i]))
-            y_pix = int(round(catalog['ycentroid'][i]))
-            radius_au.append(float(rmap[y_pix, x_pix] * self.distance_pc))
+            x_pix = catalog['xcentroid'][i] 
+            y_pix = catalog['ycentroid'][i]
+            
+            # Convert pixel to RA/DEC (degrees)
+            ra_deg, dec_deg = wcs.pixel_to_world_values(x_pix, y_pix)
+            
+            # Convert to sexagesimal format
+            coord = SkyCoord(ra=ra_deg*u.degree, dec=dec_deg*u.degree, frame='icrs')
+            ra_list.append(coord.ra.to_string(unit=u.hour, sep=':', precision=2))
+            dec_list.append(coord.dec.to_string(unit=u.degree, sep=':', precision=1))
+            
+            # Get radius in AU (round pixel coords for array indexing)
+            y_pix_int = int(round(y_pix))
+            x_pix_int = int(round(x_pix))
+            radius_au.append(float(rmap[y_pix_int, x_pix_int] * self.distance_pc))
+
+        # Replace xcentroid/ycentroid with RA/DEC
+        
+        catalog['RA'] = ra_list
+        catalog['DEC'] = dec_list
         catalog['radius_au'] = radius_au
          
 
