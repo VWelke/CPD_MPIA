@@ -2,6 +2,9 @@
 *.fits
 *.txt
 *.pkl
+*.png
+*.xlsx
+*.csv
 
 # Output directories  
 Disk_Residual_Profile/
