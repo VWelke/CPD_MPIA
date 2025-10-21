@@ -5,6 +5,15 @@
 *.png
 *.xlsx
 *.csv
+*.pdf
+*.aux
+*.log
+*.fls
+*.synctex.gz
+*.fdb_latexmk
+*.pkl
+*.pyc
+*.csv
 
 # Output directories  
 Disk_Residual_Profile/

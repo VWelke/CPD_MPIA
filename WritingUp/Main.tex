@@ -1,0 +1,40 @@
+\documentclass{article}
+\begin{document}
+
+
+\section{Observational Analysis}
+
+The raw data were downloaded from the official ExoALMA database without any additional calibration or reduction.
+(Include details such as the observational time, right ascension and declination, how the ExoALMA team combined the different observations, and the data span.)
+The dataset includes both the full field of view (10 arcseconds — to be double-checked) and the trimmed data (5 arcseconds), spanning Briggs weighting indices from 2.0 to 2.0.
+This allows a thorough investigation of the trade-off between sensitivity and resolution in the final detection.
+
+For the inner disk regions, the analysis was performed on residual images obtained by subtracting the best-fit disk model (a Gaussian model from frank) from the observations.
+For the outer disk regions, the analysis was conducted on the cleaned images without any model subtraction, as the disk emission there is negligible.
+Only the full-FOV image with a Briggs index of 2.0 was available, providing the highest sensitivity.
+
+GoFish was used to construct the deprojected radial profile of the disk residual emission, taking into account the disk inclination and position angle.
+All adopted protoplanetary disk parameters are listed in Table X.
+The default bin sampling size of one pixel was used, assuming no beam correlation.
+The median absolute deviation was used to estimate the uncertainty in each annulus, as it is less sensitive to outliers than the standard deviation.
+
+The noise profile was then reprojected into the image plane to construct a two-dimensional signal-to-noise (S/N) map, from which high-S/N sources were identified.
+A minimum 5 $\sigma$ threshold was required for a robust detection.
+Although a circumplanetary disk (CPD) typically has a small spatial extent of only a few pixels, its light is spread over the entire beam because it is unresolved; therefore, the full beam area is required to reach such a high S/N.
+With the sources catalogued, further visual inspection was performed to rule out false positives, such as bright points that are part of symmetric artefacts or background sources.
+
+
+
+
+
+
+
+\section{Modelling Approach}
+
+The modelling of the CPD emission was performed following Zhu et al (2018) and Andreews et al (2021). The formulae would be included here .
+
+\section{Results and Discussion}
+ Explain the optically thin thick regimes  clearly with formulae approximation. 
+
+
+\end{document}
