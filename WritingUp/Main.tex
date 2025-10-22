@@ -1,4 +1,8 @@
 \documentclass{article}
+
+\usepackage{xcolor}
+
+
 \begin{document}
 
 
@@ -46,5 +50,23 @@ Zhu model:
 The disk structure is set by accretion physics, not directly by Mcpd.
 For low masses, the flux is set by temperature and accretion, and can saturate quickly.
 The minimum detectable mass is often the lowest MMcpd that gives tau bigger or equal to 1 somewhere in the disk.
+
+
+
+
+\section{The Zhu Model}
+
+The Zhu et al. (2018) model describes the CPD using accretion physics.
+Essentially, the most basic version of the disk temperature is set by four components: irradiation from the central star, irradiation from the planet, accretional heating, and ISM heating.
+The surface density is approximated by two dominant components: viscous heating and external irradiation.
+(I think I forgot something about shock heating.)
+The resulting flux is approximated analytically. At low optical depth, the midplane temperature dominates (why? I thought the midplane would be cooler).
+At high optical depth, the effective temperature dominates, essentially tracing wherever $\tau$ = 1 vertically, and therefore should plateau as there are no z-dependent components there.
+The midplane temperature depends on surface density, but not the effective temperature, because as optical depth increases, adding mass does not change the flux.
+However, in the computation, for some reason the computed flux exceeds several sigma levels, unlike the Andrews model, where the computed flux stays relatively constant throughout the parameter space despite not posing any upper flux limit.
+\textcolor{red}{The issue of flux overestimation is unknown and requires checking the average optical depth.}
+
+
+
 
 \end{document}
