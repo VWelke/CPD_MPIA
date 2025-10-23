@@ -5,7 +5,12 @@
 
 \begin{document}
 
+\section{introduction}
 
+plot can show a CPD SED. 
+We expect for CPD, the mm/cm flux is originated from the outer disk compare to IR, which is from innter disk.(Zhu (2015))
+
+properties like mass range of wide orbit circumplantary disk (Rab 2019)
 \section{Observational Analysis}
 
 The raw data were downloaded from the official ExoALMA database without any additional calibration or reduction.
@@ -64,9 +69,76 @@ The resulting flux is approximated analytically. At low optical depth, the midpl
 At high optical depth, the effective temperature dominates, essentially tracing wherever $\tau$ = 1 vertically, and therefore should plateau as there are no z-dependent components there.
 The midplane temperature depends on surface density, but not the effective temperature, because as optical depth increases, adding mass does not change the flux.
 However, in the computation, for some reason the computed flux exceeds several sigma levels, unlike the Andrews model, where the computed flux stays relatively constant throughout the parameter space despite not posing any upper flux limit.
-\textcolor{red}{The issue of flux overestimation is unknown and requires checking the average optical depth.}
+\textcolor{red}{The issue of flux overestimation is unknown and requires checking the average optical depth. I might have input wrong opacity values}
+
+And besides that, regarding the uniform bands of flux and mass, the current mass is not correspondent to the minimum detectable mass given a flux measurement. 
+This is because the method takes in the sigma computed for each planet mass and CPD radius combination and integrates it, but and since the flux does not saturate, the sigma keeps increasing with mass.
+So imagine when a flux is constant at surface density values of a and b, where both yields optical thickness, and b is higher than a , integrating b would give a higher mass that tells me less about the science, we want to keep the mass as minimum detectable mass because in reality , CPD has low mass.
+Another reason is because pressing down the mass to minimum detectable mass would allow us to study more about the effects of other parameter such as accretion rate and viscosity , so we never know at high mass, whether we are able to observe it because of its temperature structure or it is just big enough, and informs little about the physical processes.
+Therefore, if I want to iterate the minimum detectable mass when all other physics are analtytical...there are several ways i can do it:
+
+1. create a grid of Mcpd, for each Mcpd compute a power-law surface density that gives tau and midplane temperature , then compute the flux,until it doesnt converge the analytical flux anymore upon decreasing the Mcpd. But the downside of this method is that 
+it is comparatively computationally heavy ,  and I would have to assume a simple power law for the surface density unless I also iteratively solve it to fit the compute analytical surface density which has 2 components in the first place to save computational effort.
+Or I can also try to plot the surface density for a few cases first, the high radius slope should be from a constant straight line so I can simply just compute the slope with a few grid points to calculate the drop off index ( Not to mix up straight line and power law) it should be a broken power law.
+Maybe the surface density profile does not change much for some cases. from figure 5, with irradiation , the surface density seems to drop off quickly after a certain radius, overall it looks like 2 straight lines and nothing like a power law.
+From  figure 8, i think he computes the mass by integrating the surface density profile.
+
+From figure 5, generally the curve is estimated by a broken power law with identical slope upon change in accretion rate , decreasing the accretion rate shifts the turnover inwards.
+But the issue is that the maths for a broken power law gives a normalisation constant evaluated at the break radius which doesnt incorporate the total mass. And if I integrate the surface density to get mass ,I cant reverse decrease the surface density appropriately to match the chang in mass.
+Or instead of mass ...what else can I decrease in the surface density without changing anything else to give the mass? 
+
+2. Another option is to note the Tb value when the  flux saturates for each radius,then compute backwards the surface density that gives such Tb at each radius, then integrate to get the mass.
+Is the scientifically feasible?  But I cant check if Tb actually plateus becuase it is R dependent . i need to check for constant R , and increasing surface density. 
+Again how to reverse compute the surface density that gives such Tb .. at tau = 0.5 , the two temperatures are equal , so I can solve the equation to get sigma at that R? 
+But tau becomes optically thick at 1 not 0.5 
+or if I just let taumm =1 , and solve the surface density at each radius..but is impossible cuz then it would be a fixed value for all the different input parameters as opacitymm is fixed, so the complete tau = 1 array has the same value.
+so I think the power law method is more reliable.
+But technically, solving the sigma for tau = 0.5 for each r value is the most reliable array, as both Text and Teff are not surface density dependent.
+But sigma depends on the extinction temperature 
+
+solve for sigma(r) when tau = 0.5 , by equating the full T_c formulae to the calculted T_ext and T_eff
+
+And then another issue lies in the mass opacity, for Andrews model it is 2.4 cm^2/g and for Zhus is 0.034 cm^2/g, which is why the integrated mass is overestimated by an order of 2. 
+But im not really sure if the Zhu opacity is for dust or gas. 
 
 
+Now , the key issue is why does the tau not plateau 
+
+
+Section 4.3 add jets and wind 
+
+2. To be honest, I dont know ,
+Explain clearly the surface density trends
+
+
+\section{Just write somemore about the modelling approach}
+
+The luminosity follows hot start , the modeling framework from Zhu, and Isella
+And then also the maths is inconvenient to write all 
+but basically T = sth can be written here
+And then Andrews surface density as well as Zhu surface density profile
+
+What else the constants 
+
+
+\subsection{Interpret the Andrews Plot}
+
+Essentially at each gap the output flux is fairly constant within the parameter space, indicating that the flux is saturated. 
+
+So for the 5 sigma sources. the computed flux could not reach the detectable sigma and is therefore extremely dependent on key brightness parameters.
+Several trial and error are need .. As expected because the sources are located far from the star,yet the accretion rate is quite high already .
+So nothign much I can do ... I can try to add one more heating to the plots
+
+
+I can add from Zhu  maybe the 
+
+How to decide when the planet irradiation dominates over the viscous heating
+
+Maybe I can plot flux versus Rout times Mp , 
+
+
+if I plot sigma as threshold or plot detection sigma as threshold , inner optically thick region doesnt change,
+but outer region close to flux limit changes because the minimuum mass to reach the flux. if flux higher, same rp and mp need higher mass in optically thin limit to give higher surface density 
 
 
 \end{document}
