@@ -203,116 +203,125 @@ class DiskResiduals_Median_SNR:
         else:
             raise ValueError("cube_type must be 'residual' or 'clean'")
 
-    def plot_profiles(self, robust_val="1.0", FOV=None, radius_unit="arcsec", use_full_fov=False, figsize=(12, 6)):
+    def plot_profiles(self, robust_val="1.0", FOV=None, radius_unit="arcsec", use_full_fov=False, figsize=(12, 6), all_disks=None):
         """
-        Plot radial profiles.
-        - use_full_fov=False: CLEAN + residual profiles; dy shown as error bars (original style).
-        - use_full_fov=True : Full-FOV CLEAN (robust=2.0); show CLEAN as a line and dy as a separate line; no residuals.
+        Plot radial profiles for one disk (default) or all disks (if all_disks is provided).
+        If all_disks is dict: plot all disks in subplots (3x5), shared y-axis, individual x-axis, no legend.
         """
         import numpy as np
         import matplotlib.pyplot as plt
+        from matplotlib.ticker import MaxNLocator , LogLocator
+        def _plot_single_disk_profile(disk_obj, ax, robust_val, FOV, radius_unit, use_full_fov):
+            r = disk_obj._rkey(robust_val)
+            if not disk_obj.has_robust(r):
+                ax.set_title(f"{disk_obj.name}\n[Missing robust {r}]")
+                ax.axis('off')
+                ax.set_yticks([])
+                return
 
-        r = self._rkey(robust_val)
-        if not self.has_robust(r):
-            print(f"[WARN] {self.name}: robust {r} not available — skipping plot.")
-            return
+            # Load cubes
+            if use_full_fov:
+                cube_clean = disk_obj.get_cube("2.0", cube_type="clean", use_full_fov=True)
+                cube_clean = disk_obj.mask_inner_region(cube_clean, factor=2.0)
+                cube_resid = None
+            else:
+                cube_clean = disk_obj.get_cube(r, FOV=FOV, cube_type="clean")
+                cube_resid = disk_obj.get_cube(r, FOV=FOV, cube_type="residual")
 
-        # ----- Load cubes -----
-        if use_full_fov:
-            print(f"[INFO] {self.name}: Using full FOV clean cube for robust {r}.")
-            # key point you asked for: force the full FOV clean cube read
-            cube_clean = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
-            cube_clean = self.mask_inner_region(cube_clean, factor=2.0)
-            cube_resid = None
-        else:
-            print(f"[INFO] {self.name}: Using default FOV ({FOV}\") cubes for robust {r}.")
-            cube_clean = self.get_cube(r, FOV=FOV, cube_type="clean")
-            cube_resid = self.get_cube(r, FOV=FOV, cube_type="residual")
-
-        # ----- CLEAN radial profile -----
-        x_cl, y_cl, dy_cl = cube_clean.radial_profile(
-            inc=self.inc, PA=self.PA, unit='Jy/beam',
-            assume_correlated=True, use_mad=True
-        )
-
-        # ----- Residual radial profile (only if not full FOV) -----
-        if (not use_full_fov) and (cube_resid is not None):
-            x_res, y_res, dy_res = cube_resid.radial_profile(
-                inc=self.inc, PA=self.PA, unit='Jy/beam',
+            # CLEAN radial profile
+            x_cl, y_cl, dy_cl = cube_clean.radial_profile(
+                inc=disk_obj.inc, PA=disk_obj.PA, unit='Jy/beam',
                 assume_correlated=True, use_mad=True
             )
+
+            # Residual radial profile
+            if (not use_full_fov) and (cube_resid is not None):
+                x_res, y_res, dy_res = cube_resid.radial_profile(
+                    inc=disk_obj.inc, PA=disk_obj.PA, unit='Jy/beam',
+                    assume_correlated=True, use_mad=True
+                )
+            else:
+                x_res = y_res = dy_res = None
+
+            # Radius units
+            if radius_unit == "au":
+                x_cl = x_cl * disk_obj.distance_pc
+                if x_res is not None:
+                    x_res = x_res * disk_obj.distance_pc
+                xlabel = "Radius (au)"
+                gap_unit_factor = disk_obj.distance_pc
+            else:
+                xlabel = "Radius (arcsec)"
+                gap_unit_factor = 1.0
+
+            # Plot
+            if use_full_fov:
+                ax.plot(x_cl, y_cl, color='gray', linewidth=2)
+                ax.plot(x_cl, dy_cl, color='crimson', linewidth=2)
+            else:
+                ax.plot(x_cl, y_cl, color='gray', linewidth=2)
+                #ax.errorbar(x_cl, y_cl, dy_cl, fmt='none', ecolor='gray', alpha=0.5, capsize=2)
+                if x_res is not None:
+                    ax.plot(x_res, dy_res, color='crimson', linewidth=2)
+
+            # Overlays: R90, rings, gaps
+            if hasattr(disk_obj, "disksize"):
+                R90 = disk_obj.disksize["R90"] * gap_unit_factor
+                err_low = disk_obj.disksize.get("R90_err_low", 0.0) * gap_unit_factor
+                err_high = disk_obj.disksize.get("R90_err_high", 0.0) * gap_unit_factor
+                ax.axvline(R90, color='k', linestyle='--')
+                if (err_low > 0) or (err_high > 0):
+                    ax.axvspan(R90 - err_low, R90 + err_high, color='k', alpha=0.15)
+
+            if hasattr(disk_obj, "ringgap") and disk_obj.ringgap is not None and disk_obj.ringgap.size > 0:
+                rg = disk_obj.ringgap
+                if rg.ndim == 1:
+                    rg = rg[np.newaxis, :]
+                for row in rg:
+                    if radius_unit == "au":
+                        rad  = row[0]
+                        width = row[3] if not np.isnan(row[3]) else None
+                    else:
+                        rad  = row[1]
+                        width = row[4] if not np.isnan(row[4]) else None
+                    flag = int(row[2])  # 0 gap, 1 ring
+                    color = '#b9fbc0' if flag == 0 else '#cdb4fe'
+                    ax.axvline(rad, color=color, linestyle=':', alpha=1.0)
+                    if width is not None and width > 0:
+                        ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
+
+            ax.set_yscale('log')
+            #ax.yaxis.set_major_locator(MaxNLocator(nbins=6))  # Set max 4 major ticks
+            #ax.set_ylabel('Intensity (Jy/beam)')
+            ax.yaxis.set_major_locator(LogLocator(base=10, numticks=4))
+            ax.yaxis.set_minor_locator(plt.NullLocator())
+            ax.set_title(disk_obj.name)
+
+        # --- Main logic ---
+        if all_disks is None:
+            fig, ax = plt.subplots(constrained_layout=True, figsize=figsize)
+            _plot_single_disk_profile(self, ax, robust_val, FOV, radius_unit, use_full_fov)
+            ax.set_xlabel("Radius (au)" if radius_unit == "au" else "Radius (arcsec)")
+            ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+            plt.show()
         else:
-            x_res = y_res = dy_res = None
-
-        # ----- Radius units -----
-        if radius_unit == "au":
-            x_cl = x_cl * self.distance_pc
-            if x_res is not None:
-                x_res = x_res * self.distance_pc
-            xlabel = "Radius (au)"
-            gap_unit_factor = self.distance_pc
-        else:
-            xlabel = "Radius (arcsec)"
-            gap_unit_factor = 1.0
-
-        # ----- Plot -----
-        fig, ax = plt.subplots(constrained_layout=True, figsize=figsize)
-
-        if use_full_fov:
-            # Full-FOV mode: line for CLEAN, line for dy (no residuals)
-            ax.plot(x_cl, y_cl, color='gray', linewidth=2, label='CLEAN')
-            ax.plot(x_cl, dy_cl, color='crimson', linewidth=2, label='dy (σ)')
-        else:
-            # Normal mode: dy as error bars (CLEAN + residual)
-            ax.plot(x_cl, y_cl, color='gray', linewidth=2, label='CLEAN')
-            ax.errorbar(x_cl, y_cl, dy_cl, fmt='none', ecolor='gray', alpha=0.5, capsize=2)
-
-            if x_res is not None:
-                ax.plot(x_res, dy_res, color='crimson', linewidth=2, label='Residual dy')
-                
-
-        # ----- Overlays: R90, rings, gaps -----
-        if hasattr(self, "disksize"):
-            R90 = self.disksize["R90"] * gap_unit_factor
-            err_low = self.disksize.get("R90_err_low", 0.0) * gap_unit_factor
-            err_high = self.disksize.get("R90_err_high", 0.0) * gap_unit_factor
-            ax.axvline(R90, color='k', linestyle='--', label='R90')
-            if (err_low > 0) or (err_high > 0):
-                ax.axvspan(R90 - err_low, R90 + err_high, color='k', alpha=0.15, label='R90 error')
-
-        if hasattr(self, "ringgap") and self.ringgap is not None and self.ringgap.size > 0:
-            rg = self.ringgap
-            if rg.ndim == 1:
-                rg = rg[np.newaxis, :]
-
-            gap_added = ring_added = False
-            for row in rg:
-                if radius_unit == "au":
-                    rad  = row[0]
-                    width = row[3] if not np.isnan(row[3]) else None
-                else:
-                    rad  = row[1]
-                    width = row[4] if not np.isnan(row[4]) else None
-
-                flag = int(row[2])  # 0 gap, 1 ring
-                color = '#b9fbc0' if flag == 0 else '#cdb4fe'
-                label = None
-                if flag == 0 and not gap_added:
-                    label = 'Gap'; gap_added = True
-                if flag == 1 and not ring_added:
-                    label = 'Ring'; ring_added = True
-
-                ax.axvline(rad, color=color, linestyle=':', alpha=1.0, label=label)
-                if width is not None and width > 0:
-                    ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
-
-        ax.set_yscale('log')
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel('Intensity (Jy/beam)')
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
-        ax.set_title(f"{self.name} robust={r}")
-        plt.show()
-    
+            disk_names = list(all_disks.keys())
+            n_disks = len(disk_names)
+            ncols = 3
+            nrows = 5
+            fig, axes = plt.subplots(nrows, ncols, figsize=(12, 15), sharey=True)
+            axes = axes.flatten()
+            for i, disk_name in enumerate(disk_names):
+                disk_obj = all_disks[disk_name]
+                _plot_single_disk_profile(disk_obj, axes[i], robust_val, FOV, radius_unit, use_full_fov)
+                # Only set x-label for bottom row
+                if i == ncols * nrows - ncols:  # bottom left index
+                    axes[i].set_xlabel("Radius (au)" if radius_unit == "au" else "Radius (arcsec)")
+                    axes[i].set_ylabel("Intensity (Jy/beam)")
+            for ax in axes[n_disks:]:
+                ax.axis('off')
+            plt.tight_layout()
+            plt.show()
 
     #------------------------------
     # Standard Deviation Methods
@@ -708,88 +717,119 @@ class DiskResiduals_Median_SNR:
     
 
     
-    def plot_snr_map_simple(self, robust_val, vmin=-6, vmax=6, show=True, use_full_fov=False):
+    def plot_snr_map_simple(self, robust_val, vmin=-6, vmax=6, show=True, use_full_fov=False, all_disks=None):
         """
-        Plot simplified SNR map with 3σ and 5σ contours and the R90 contour.
-        Skips cleanly if required data/cubes are missing.
+        Plot simplified SNR map(s) with 3σ, 5σ, and R90 contours.
+        If all_disks is provided, plot all in a grid (3x5) with shared colorbar.
         """
-        r = self._rkey(robust_val)
+        import matplotlib.pyplot as plt
+        from matplotlib.lines import Line2D
+        import numpy as np
 
-        # Ensure we have/compute an SNR map
-        if use_full_fov:
-            print(f"[INFO] {self.name}: Using full FOV for robust {r} SNR map.")
-            snr_map = self.snr_map_FullFOV.get(r)
+        def _plot_single(ax, disk_obj):
+            r = disk_obj._rkey(robust_val)
+            # Retrieve SNR map
+            if use_full_fov:
+                snr_map = disk_obj.snr_map_FullFOV.get(r)
+                cube = disk_obj.get_cube("2.0", cube_type="clean", use_full_fov=True)
+            else:
+                snr_map = disk_obj.snr_maps.get(r)
+                if snr_map is None:
+                    snr_map = disk_obj.create_snr_map(r)
+                cube = disk_obj.get_cube(r, cube_type="residual")
 
-        else:
-            print(f"[INFO] {self.name}: Using default FOV for robust {r} SNR map.")
-            snr_map = self.snr_maps.get(r)
-            if snr_map is None:
-                snr_map = self.create_snr_map(r)
-
-    
-        #if snr_map is None:
-           # print(f"[WARN] {self.name}: robust {r} SNR map unavailable — skipping plot.")
-            #return
-
-        # Need residual cube for header (pixel scale) and disk_coords
-        if use_full_fov:
-            print(f"[INFO] {self.name}: Using full FOV clean cube for robust {r}.")
-            cube = self.get_cube("2.0", cube_type="clean", use_full_fov=True)
-        else:
-            cube = self.get_cube(r, cube_type="residual")
-            if cube is None:
-                print(f"[WARN] {self.name}: robust {r} residual cube missing — skipping plot.")
+            if snr_map is None or cube is None:
+                ax.axis("off")
+                ax.set_title(f"{disk_obj.name}\n[Missing data]")
                 return
 
-        # Binary masks for contours
-        mask_3sigma = snr_map >= 3.0
-        mask_5sigma = snr_map >= 5.0
+            # Binary masks for contours
+            mask_3sigma = snr_map >= 3.0
+            mask_5sigma = snr_map >= 5.0
 
-        # Pixel scale (arcsec/pixel); abs in case CDELT1 < 0
-        try:
-            pixel_scale_arcsec = abs(float(cube.header.get('CDELT1'))) * 3600.0
-        except Exception:
-            pixel_scale_arcsec = None
+            # Deprojected radius map
+            rmap = cube.disk_coords(inc=disk_obj.inc, PA=disk_obj.PA)[0]
+            r90_arcsec = disk_obj.disksize["R90"]
 
-        # R90 in arcsec and AU
-        r90_arcsec = self.disksize["R90"]  
-        r90_au = r90_arcsec * float(self.distance_pc)
+            im = ax.imshow(snr_map, origin='lower', cmap='bwr', vmin=vmin, vmax=vmax)
+            ax.contour(mask_3sigma, levels=[0.5], colors='yellow', linewidths=1.5, linestyles='--')
+            ax.contour(mask_5sigma, levels=[0.5], colors='#00FF00', linewidths=2, linestyles='-')
+            ax.contour(rmap, levels=[r90_arcsec], colors='orange', linewidths=2.5)
+            #ax.set_title(disk_obj.name, fontsize=10)
+            ax.set_xticks([])
+            ax.set_yticks([])
 
-        # Deprojected radial map (same units as r90_arcsec)
-        rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
+            return im
 
-        # ---- Plot ----
-        import matplotlib.pyplot as plt
-        
+        # --- Single-disk case ---
+        if all_disks is None:
+            fig, ax = plt.subplots(figsize=(7, 6))
+            im = _plot_single(ax, self)
+            cb = fig.colorbar(im, ax=ax)
+            cb.set_label("SNR")
+            ax.set_xlabel("Pixel X")
+            ax.set_ylabel("Pixel Y")
+            plt.tight_layout()
+            if show:
+                plt.show()
+            return
 
-        plt.figure(figsize=(8, 7))
-        # purple-green colormap: PiYG, greyscale: Greys
-        plt.imshow(snr_map, origin='lower', cmap='coolwarm', vmin=vmin, vmax=vmax)
-        cb = plt.colorbar()
-        cb.set_label('SNR')
+        # --- Multi-disk case (tight + titles inside) ---
+        import matplotlib as mpl
+        disk_names = list(all_disks.keys())
+        n_disks = len(disk_names)
+        ncols, nrows = 3, 5  # you can auto-adjust later if desired
 
-        # Contours
-        plt.contour(mask_3sigma, levels=[0.5], colors='yellow', linewidths=1.5, linestyles='--')
-        plt.contour(mask_5sigma, levels=[0.5], colors='Red', linewidths=4, linestyles='-')
-        plt.contour(rmap, levels=[r90_arcsec], colors='orange', linewidths=2.5, linestyles='-')
+        # Figure size tuned for compact layout
+        fig, axes = plt.subplots(nrows, ncols, figsize=(10, 14))
+        axes = axes.flatten()
 
-        # Labels
-        plt.title(f"{self.name} — SNR Contours (robust={r})")
-        plt.xlabel("Pixel X")
-        plt.ylabel("Pixel Y")
+        im = None
+        for i, name in enumerate(disk_names):
+            disk_obj = all_disks[name]
+            im = _plot_single(axes[i], disk_obj)
+            ax = axes[i]
 
-        # Legend (manual)
-        custom_lines = [
-            Line2D([0], [0], color='brown', lw=2, linestyle='--', label='>3σ'),
-            Line2D([0], [0], color='blue',  lw=2, linestyle='-',  label='>5σ'),
-            Line2D([0], [0], color='orange',lw=2, linestyle='-',  label=f'R90 = {r90_au:.1f} AU'),
-        ]
-        plt.legend(handles=custom_lines, loc='upper right')
+            # Remove ticks and labels
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_xlabel("")
+            ax.set_ylabel("")
+
+            # Keep equal aspect (no stretching)
+            ax.set_aspect('equal', adjustable='box')
+
+            # Add title INSIDE panel (upper left)
+            ax.text(
+                0.05, 0.9, name.replace('_', ' '),
+                transform=ax.transAxes,
+                color='white',
+                fontsize=9,
+                fontweight='bold',
+                ha='left', va='top',
+                bbox=dict(facecolor='black', alpha=1.0, edgecolor='none', pad=1)
+            )
+
+        # Hide any extra panels
+        for ax in axes[n_disks:]:
+            ax.axis("off")
+
+        # Compact shared colorbar on the right
+        cbar_ax = fig.add_axes([0.91, 0.1, 0.02, 0.8])
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap='bwr', norm=norm)
+        cbar.set_label("SNR", fontsize=11)
+        cbar.ax.tick_params(labelsize=9)
+        cbar.outline.set_visible(True)
+
+        # Tighten layout
+        plt.subplots_adjust(
+            left=0.02, right=0.89, top=0.98, bottom=0.02,
+            wspace=0.02, hspace=0.02
+        )
 
         if show:
             plt.show()
-
-
     def plot_all_catalog_centroids(self, robust_values, threshold=5.0, catalog_suffix=None,
                                vmin=-6, vmax=6, use_full_fov=False,
                                ncols=3, figsize=(5, 5)):
@@ -889,7 +929,7 @@ class DiskResiduals_Median_SNR:
             rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0] * self.distance_pc  # in AU
 
             # --- Plot ---
-            im = ax.imshow(snr_map, origin='lower', cmap='coolwarm',
+            im = ax.imshow(snr_map, origin='lower', cmap='bwr',
                         vmin=vmin, vmax=vmax, extent=extent)
             ax.scatter((cat['xcentroid'] - nx/2) * pixscale_au,
                     (cat['ycentroid'] - ny/2) * pixscale_au,

@@ -1,0 +1,60 @@
+
+
+
+\clearpage
+
+\begin{table}[h]
+\centering
+\caption{Model Parameters for PPD and CPD}
+\label{tab:parameters}
+\begin{tabular}{l l c c}
+\toprule
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} & \textbf{Unit} \\
+\midrule
+\textbf{Stellar Parameters} & & & \\
+Mass & \(M_*\) & 1.65 & \(M_\odot\) \\
+Radius & \(R_*\) & 1.6 & \(R_\odot\) \\
+Temperature & \(T_*\) & 4000 & K \\
+\midrule
+\textbf{Planet Parameters} & & & \\
+Mass & \(M_p\) & 3.0 & \(M_{\text{Jup}}\) \\
+Radius & \(R_p\) & 1.17 & \(R_{\text{Jup}}\) \\
+Temperature & \(T_p\) & 1200 & K \\
+Semi-major axis & \(a_p\) & 37.2 & AU \\
+\midrule
+\textbf{PPD Parameters} & & & \\
+Surface density index & \(\gamma\) & -1.0 & -- \\
+Scale Height (small dust) & \(H^{Sm}_{(R_{0})}/R_0\) & 0.05 & -- \\
+Scale Height (big dust) & \(H^{Bg}_{(R_{0})}/R_0\) & 0.02 & -- \\
+Flaring index & \(\beta\) & 1.1 & -- \\
+Reference radius & \(R_0\) & 1.0 & AU \\
+Surface dust density & \(\Sigma_{0,\text{PPD}}\) & 10 & g/cm² \\
+Dust-to-gas ratio & -- & 0.01 & -- \\
+\midrule
+\textbf{CPD Parameters} & & & \\
+Surface density index & \(\gamma\) & -1.2 & -- \\
+Aspect ratio (small dust) & \(H^{Sm}_{(r_{0})}/r_0\) & 0.1 & -- \\
+Aspect ratio (big dust) & \(H^{Bg}_{(r_{0})}/r_0\) & 0.05 & -- \\
+Flaring index & \(\beta\) & 1.15 & -- \\
+Reference radius* & \(r_0\) & 1.0 & AU \\
+Surface dust density & \(\Sigma_{0,\text{CPD}}\) & 0.016 & g/cm² \\
+CPD radius & r & 2.5 & AU \\
+Dust-to-gas ratio & -- & 0.01 & -- \\
+\midrule
+\textbf{Mesh} & & & \\
+Radial & R & [0.2 ,90] & AU \\
+Azimuthal & \(\phi\) & [0, 2\(\pi\)] & rad \\
+Polar* & \(\theta\) & [\(\pi/2\) , \(\pi/2\) - 0.7] & rad \\
+Mesh Resolution & \(N_R \times N_{phi} \times N_{theta}\) & \(150 \times 200 \times 80\) & -- \\
+\midrule
+\textbf{Image} & & & \\
+Pixel & \(n_{pix}^X \times n_{pix}^Y\) & \(1000 \times 1000\) & -- \\
+Distance & D & 110 & pc\\
+
+\bottomrule
+\end{tabular}
+\caption*{\scriptsize\textit{* Reference radius \(r_0\) is measured from the protoplanet, not the central star. The polar angle \(\theta\) is defined such that \(z = \pi/2 - \theta\).}}
+\end{table}
+
+
+\clearpage
