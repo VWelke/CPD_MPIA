@@ -4,6 +4,7 @@
 # Define a class (stores functions) for handling each disk
 # --------------------------------------------------------
 
+from operator import pos
 import os  
 import numpy as np  
 import re  # Python’s regular expressions module to extract numbers from filenames
@@ -234,6 +235,17 @@ class DiskResiduals_Median_SNR:
                 assume_correlated=True, use_mad=True
             )
 
+            # If using full FOV, optionally crop to outer disk region
+            if use_full_fov and hasattr(disk_obj, "disksize"):
+                r90 = float(disk_obj.disksize.get("R90", 0))
+                if r90 > 0:
+                    # Convert 2×R90 into the same units as x_cl
+                    scale = disk_obj.distance_pc if radius_unit == "au" else 1.0
+                    x_min = 2.0 * r90 * scale
+                    mask = x_cl >= x_min
+                    if np.any(mask):  # only apply if not all False
+                        x_cl, y_cl, dy_cl = x_cl[mask], y_cl[mask], dy_cl[mask]
+
             # Residual radial profile
             if (not use_full_fov) and (cube_resid is not None):
                 x_res, y_res, dy_res = cube_resid.radial_profile(
@@ -260,35 +272,36 @@ class DiskResiduals_Median_SNR:
                 ax.plot(x_cl, dy_cl, color='crimson', linewidth=2)
             else:
                 ax.plot(x_cl, y_cl, color='gray', linewidth=2)
-                #ax.errorbar(x_cl, y_cl, dy_cl, fmt='none', ecolor='gray', alpha=0.5, capsize=2)
+                # ax.errorbar(x_cl, y_cl, dy_cl, fmt='none', ecolor='gray', alpha=0.5, capsize=2)
                 if x_res is not None:
                     ax.plot(x_res, dy_res, color='crimson', linewidth=2)
 
             # Overlays: R90, rings, gaps
-            if hasattr(disk_obj, "disksize"):
-                R90 = disk_obj.disksize["R90"] * gap_unit_factor
-                err_low = disk_obj.disksize.get("R90_err_low", 0.0) * gap_unit_factor
-                err_high = disk_obj.disksize.get("R90_err_high", 0.0) * gap_unit_factor
-                ax.axvline(R90, color='k', linestyle='--')
-                if (err_low > 0) or (err_high > 0):
-                    ax.axvspan(R90 - err_low, R90 + err_high, color='k', alpha=0.15)
+            if (not use_full_fov):
+                if hasattr(disk_obj, "disksize"):
+                    R90 = disk_obj.disksize["R90"] * gap_unit_factor
+                    err_low = disk_obj.disksize.get("R90_err_low", 0.0) * gap_unit_factor
+                    err_high = disk_obj.disksize.get("R90_err_high", 0.0) * gap_unit_factor
+                    ax.axvline(R90, color='k', linestyle='--')
+                    if (err_low > 0) or (err_high > 0):
+                        ax.axvspan(R90 - err_low, R90 + err_high, color='k', alpha=0.15)
 
-            if hasattr(disk_obj, "ringgap") and disk_obj.ringgap is not None and disk_obj.ringgap.size > 0:
-                rg = disk_obj.ringgap
-                if rg.ndim == 1:
-                    rg = rg[np.newaxis, :]
-                for row in rg:
-                    if radius_unit == "au":
-                        rad  = row[0]
-                        width = row[3] if not np.isnan(row[3]) else None
-                    else:
-                        rad  = row[1]
-                        width = row[4] if not np.isnan(row[4]) else None
-                    flag = int(row[2])  # 0 gap, 1 ring
-                    color = '#b9fbc0' if flag == 0 else '#cdb4fe'
-                    ax.axvline(rad, color=color, linestyle=':', alpha=1.0)
-                    if width is not None and width > 0:
-                        ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
+                if hasattr(disk_obj, "ringgap") and disk_obj.ringgap is not None and disk_obj.ringgap.size > 0:
+                    rg = disk_obj.ringgap
+                    if rg.ndim == 1:
+                        rg = rg[np.newaxis, :]
+                    for row in rg:
+                        if radius_unit == "au":
+                            rad  = row[0]
+                            width = row[3] if not np.isnan(row[3]) else None
+                        else:
+                            rad  = row[1]
+                            width = row[4] if not np.isnan(row[4]) else None
+                        flag = int(row[2])  # 0 gap, 1 ring
+                        color = '#b9fbc0' if flag == 0 else '#cdb4fe'
+                        ax.axvline(rad, color=color, linestyle=':', alpha=1.0)
+                        if width is not None and width > 0:
+                            ax.axvspan(rad - width/2, rad + width/2, color=color, alpha=0.2)
 
             ax.set_yscale('log')
             #ax.yaxis.set_major_locator(MaxNLocator(nbins=6))  # Set max 4 major ticks
@@ -717,18 +730,23 @@ class DiskResiduals_Median_SNR:
     
 
     
-    def plot_snr_map_simple(self, robust_val, vmin=-6, vmax=6, show=True, use_full_fov=False, all_disks=None):
+    def plot_snr_map_simple(self, robust_val, vmin=-6, vmax=6, show=True, use_full_fov=False, figsize=(6, 6)):
         """
-        Plot simplified SNR map(s) with 3σ, 5σ, and R90 contours.
-        If all_disks is provided, plot all in a grid (3x5) with shared colorbar.
+        Plot simplified SNR map for a single disk with 3σ, 5σ, and R90 contours.
         """
         import matplotlib.pyplot as plt
-        from matplotlib.lines import Line2D
+        from matplotlib.patches import Ellipse
+        import matplotlib as mpl
         import numpy as np
+        from astropy.wcs import WCS
+        from astropy.coordinates import SkyCoord
+        import astropy.units as u
 
+        # Helper to plot one disk
         def _plot_single(ax, disk_obj):
             r = disk_obj._rkey(robust_val)
-            # Retrieve SNR map
+
+            # Retrieve SNR map + cube
             if use_full_fov:
                 snr_map = disk_obj.snr_map_FullFOV.get(r)
                 cube = disk_obj.get_cube("2.0", cube_type="clean", use_full_fov=True)
@@ -741,95 +759,157 @@ class DiskResiduals_Median_SNR:
             if snr_map is None or cube is None:
                 ax.axis("off")
                 ax.set_title(f"{disk_obj.name}\n[Missing data]")
-                return
+                return None
 
-            # Binary masks for contours
+            # --- WCS for RA/Dec ---
+            wcs = WCS(cube.header).celestial
+            ny, nx = snr_map.shape
+            xticks_pix = np.linspace(100, nx - 100, 4)
+            yticks_pix = np.linspace(100, ny - 100, 4)
+            ra_ticks, _ = wcs.pixel_to_world_values(xticks_pix, np.zeros_like(xticks_pix))
+            _, dec_ticks = wcs.pixel_to_world_values(np.zeros_like(yticks_pix), yticks_pix)
+
+            # --- Format ticks: show only seconds ---
+            ra_coords = SkyCoord(ra_ticks * u.deg, 0 * u.deg)
+            dec_coords = SkyCoord(0 * u.deg, dec_ticks * u.deg)
+            ra_labels = [f"{c.ra.hms.s:.2f}" for c in ra_coords]
+            dec_labels = [f"{c.dec.dms.s:.2f}" for c in dec_coords]
+
+            ra_prefix = ra_coords[0].ra.to_string(unit=u.hour, sep=':')[:8]
+            dec_prefix = dec_coords[0].dec.to_string(unit=u.deg, sep=':')[:8]
+
+            # --- Plot image ---
+            im = ax.imshow(snr_map, origin='lower', cmap='bwr', vmin=vmin, vmax=vmax)
+
+            # --- Contours ---
             mask_3sigma = snr_map >= 3.0
             mask_5sigma = snr_map >= 5.0
-
-            # Deprojected radius map
             rmap = cube.disk_coords(inc=disk_obj.inc, PA=disk_obj.PA)[0]
             r90_arcsec = disk_obj.disksize["R90"]
+            ax.contour(mask_3sigma, levels=[0.5], colors='yellow', linewidths=1.0, linestyles='--')
+            ax.contour(mask_5sigma, levels=[0.5], colors='lime', linewidths=1.3, linestyles='-')
+            ax.contour(rmap, levels=[r90_arcsec], colors='orange', linewidths=2.0)
 
-            im = ax.imshow(snr_map, origin='lower', cmap='bwr', vmin=vmin, vmax=vmax)
-            ax.contour(mask_3sigma, levels=[0.5], colors='yellow', linewidths=1.5, linestyles='--')
-            ax.contour(mask_5sigma, levels=[0.5], colors='#00FF00', linewidths=2, linestyles='-')
-            ax.contour(rmap, levels=[r90_arcsec], colors='orange', linewidths=2.5)
-            #ax.set_title(disk_obj.name, fontsize=10)
-            ax.set_xticks([])
-            ax.set_yticks([])
+            # --- Beam ellipse ---
+            hdr = cube.header
+            beam_x_arcsec = float(hdr['BMAJ']) * 3600.0
+            beam_y_arcsec = float(hdr['BMIN']) * 3600.0
+            pix_scale_arcsec = abs(float(hdr['CDELT1'])) * 3600.0
+            beam_width_pix = beam_x_arcsec / pix_scale_arcsec
+            beam_height_pix = beam_y_arcsec / pix_scale_arcsec
+            beam = Ellipse(
+                xy=(0.05 * nx, 0.05 * ny),
+                width=beam_width_pix,
+                height=beam_height_pix,
+                angle=-disk_obj.PA,
+                facecolor='none',
+                edgecolor='Black',
+                hatch='///',
+                lw=0.8
+            )
+            ax.add_patch(beam)
+
+            # --- Axis labels ---
+            ax.set_xticks(xticks_pix)
+            ax.minorticks_on()
+            ax.tick_params(axis='both', which='minor', direction='in', length=2, width=0.5)
+            ax.set_xticklabels(ra_labels)
+            ax.set_yticks(yticks_pix)
+            ax.set_yticklabels(dec_labels)
+            ax.set_xlabel(f"RA (J2000) — {ra_prefix}", fontsize=12)
+            ax.set_ylabel(f"Dec (J2000) — {dec_prefix}", fontsize=12)
+            ax.tick_params(axis='both', labelsize=11, direction='in', length=3, width=0.7)
+            ax.set_aspect('equal', adjustable='box')
 
             return im
 
-        # --- Single-disk case ---
-        if all_disks is None:
-            fig, ax = plt.subplots(figsize=(7, 6))
-            im = _plot_single(ax, self)
-            cb = fig.colorbar(im, ax=ax)
-            cb.set_label("SNR")
-            ax.set_xlabel("Pixel X")
-            ax.set_ylabel("Pixel Y")
-            plt.tight_layout()
-            if show:
-                plt.show()
+        # --- Main single-disk plot ---
+        fig, ax = plt.subplots(figsize=figsize)
+        im = _plot_single(ax, self)
+        if im is None:
             return
 
-        # --- Multi-disk case (tight + titles inside) ---
+        # --- Top colorbar ---
+        box = ax.get_position()
+        cbar_ax = fig.add_axes([box.x0, box.y1, box.width, 0.05])
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap='bwr', norm=norm, orientation='horizontal')
+        cbar.set_label("Residual SNR", fontsize=12)
+        cbar.ax.xaxis.set_ticks_position('top')
+        cbar.ax.xaxis.set_label_position('top')
+        cbar.ax.tick_params(axis='x', labelsize=11, direction='in')
+
+        
+        if show:
+            plt.show()
+
+
+    def plot_snr_map_grid(all_disks, robust_val, vmin=-6, vmax=6, show=True, use_full_fov=False):
+        """
+        Plot SNR maps for multiple disks in a compact grid (default 3x5).
+        """
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Ellipse
         import matplotlib as mpl
+        import numpy as np
+        from astropy.wcs import WCS
+
+        # You can call the same single-disk logic for each
+        def _plot_single(ax, disk_obj):
+            return disk_obj.plot_snr_map_simple(
+                robust_val=robust_val,
+                vmin=vmin, vmax=vmax,
+                show=False,
+                use_full_fov=use_full_fov
+            )
+
         disk_names = list(all_disks.keys())
         n_disks = len(disk_names)
-        ncols, nrows = 3, 5  # you can auto-adjust later if desired
-
-        # Figure size tuned for compact layout
+        ncols, nrows = 3, 5
         fig, axes = plt.subplots(nrows, ncols, figsize=(10, 14))
         axes = axes.flatten()
 
         im = None
         for i, name in enumerate(disk_names):
             disk_obj = all_disks[name]
-            im = _plot_single(axes[i], disk_obj)
+            im = disk_obj.plot_snr_map_simple(
+                robust_val=robust_val,
+                vmin=vmin, vmax=vmax,
+                show=False,
+                use_full_fov=use_full_fov
+            )
             ax = axes[i]
-
-            # Remove ticks and labels
+            ax.imshow(im)
             ax.set_xticks([])
             ax.set_yticks([])
-            ax.set_xlabel("")
-            ax.set_ylabel("")
-
-            # Keep equal aspect (no stretching)
-            ax.set_aspect('equal', adjustable='box')
-
-            # Add title INSIDE panel (upper left)
             ax.text(
                 0.05, 0.9, name.replace('_', ' '),
                 transform=ax.transAxes,
-                color='white',
-                fontsize=9,
-                fontweight='bold',
+                color='white', fontsize=9, fontweight='bold',
                 ha='left', va='top',
                 bbox=dict(facecolor='black', alpha=1.0, edgecolor='none', pad=1)
             )
 
-        # Hide any extra panels
         for ax in axes[n_disks:]:
             ax.axis("off")
 
-        # Compact shared colorbar on the right
-        cbar_ax = fig.add_axes([0.91, 0.1, 0.02, 0.8])
+        # Shared top colorbar
+        cbar_ax = fig.add_axes([0.2, 0.94, 0.6, 0.02])
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-        cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap='bwr', norm=norm)
-        cbar.set_label("SNR", fontsize=11)
-        cbar.ax.tick_params(labelsize=9)
-        cbar.outline.set_visible(True)
+        cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap='bwr', norm=norm, orientation='horizontal')
+        cbar.set_label("Residual SNR", fontsize=10, weight='bold')
+        cbar.ax.xaxis.set_ticks_position('top')
+        cbar.ax.xaxis.set_label_position('top')
+        cbar.ax.tick_params(axis='x', labelsize=8, direction='in')
 
-        # Tighten layout
-        plt.subplots_adjust(
-            left=0.02, right=0.89, top=0.98, bottom=0.02,
-            wspace=0.02, hspace=0.02
-        )
-
+        plt.subplots_adjust(left=0.05, right=0.98, top=0.92, bottom=0.05, wspace=0.02, hspace=0.02)
         if show:
             plt.show()
+
+
+
+
+
     def plot_all_catalog_centroids(self, robust_values, threshold=5.0, catalog_suffix=None,
                                vmin=-6, vmax=6, use_full_fov=False,
                                ncols=3, figsize=(5, 5)):
