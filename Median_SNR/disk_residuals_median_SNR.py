@@ -336,6 +336,15 @@ class DiskResiduals_Median_SNR:
             plt.tight_layout()
             plt.show()
 
+    def overlay_R90(self, ax, cube):
+        """
+        Overlay the R90 contour on an image in RA/Dec coordinates.
+        - ax: matplotlib axis
+        - cube: imagecube object (with disk_coords method)
+        """
+        rmap = cube.disk_coords(inc=self.inc, PA=self.PA)[0]
+        r90_arcsec = self.disksize["R90"]
+        ax.contour(rmap, levels=[r90_arcsec], colors='orange', linewidths=2.0)
     #------------------------------
     # Standard Deviation Methods
     #------------------------------
