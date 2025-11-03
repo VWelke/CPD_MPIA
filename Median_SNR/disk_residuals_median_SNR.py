@@ -77,7 +77,10 @@ class DiskResiduals_Median_SNR:
         self.disksize = {
             "R90": arr[1, 1],           # median R90 in arcsec
             "R90_err_low": arr[4, 1],   # lower error in arcsec
-            "R90_err_high": arr[5, 1]   # upper error in arcsec
+            "R90_err_high": arr[5, 1],  # upper error in arcsec
+            "R95": arr[1, 2],           # median R95 in arcsec
+            "R95_err_low": arr[4, 2],   # lower error in arcsec
+            "R95_err_high": arr[5, 2]   # upper error in arcsec
         }
 
 
@@ -88,12 +91,21 @@ class DiskResiduals_Median_SNR:
         Radial_location(au), Radial_location(arcsec), Flag(0=gaps,1=rings), 
         Width(au), Width(arcsec), Gap_depth, R_in(au), R_in(arcsec), R_out(au), R_out(arcsec)
         """
-        arr = np.loadtxt(ringgap_path, comments="#")
+        arr = np.genfromtxt(ringgap_path, comments="#", delimiter="\t", dtype=float, ndmin=2)
         
 
         # If the array is 1D, convert it to 2D with one row so we can index it consistently
-        if arr.ndim == 1:
+        #if arr.ndim == 1:
+        #    arr = arr[np.newaxis, :]
+        # If arr is 1D (single row), convert to 2D
+        if arr.ndim == 1 and arr.size > 0:
             arr = arr[np.newaxis, :]
+        # If arr is empty, skip
+        if arr.size == 0:
+            self.ringgap = None
+            self.ringgap_info = {}
+            print(f"[WARN] {self.name}: {ringgap_path} is empty or only comments.")
+            return
         
         # Store the full array for use in plot_profiles
         self.ringgap = arr
@@ -111,6 +123,9 @@ class DiskResiduals_Median_SNR:
             "r_out_au": arr[:, 8],         # Column 8: outer radius in AU
             "r_out_arcsec": arr[:, 9]      # Column 9: outer radius in arcsec
         }  
+
+
+
 
     def load_residuals(self):
         """
