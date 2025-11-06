@@ -10,6 +10,9 @@ sys.path.append('/mnt/d/CPD_MPIA/Injection_Recovery')
 import diskdictionaryr2_0 as disk
 
 
+os.makedirs('resid_vis', exist_ok=True)
+os.makedirs('mprofiles', exist_ok=True)
+
 # specify target disk and gap
 target = 'AA_Tau'	# CSD name
 gap_ix = 0		# which gap CPD is in (based on dict list)
@@ -89,7 +92,7 @@ for i in range(len(F_cpd)):
         # record parameter values (F_cpd in uJy, j, r_cpd, az_cpd)
         with open('./injections/'+target+'_gap'+str(gap_ix)+'_mpars.'+subsuf+'.txt', 'a') as f:
             f.write('%i    %s    %.3f    %i\n' % \
-                    (np.int(np.round(1e3*F_cpd[i])), str(j).zfill(4), 
+                    (int(np.round(1e3*F_cpd[i])), str(j).zfill(4), 
                      r_cpd[j], az_cpd[j]))
 
 print(time.time() - t0)

@@ -116,12 +116,13 @@ class DiskResiduals_Median_SNR:
             "radius_arcsec": arr[:, 1],    # Column 1: radius in arcsec
             "flag": arr[:, 2].astype(int), # Column 2: 0=gap, 1=ring
             "width_au": arr[:, 3],         # Column 3: width in AU
-            "gap_depth": arr[:, 4],        # Column 5: gap depth (NaN for rings)
-            "r_in_au": arr[:, 5],          # Column 6: inner radius in AU
-            "r_in_arcsec": arr[:, 6],      # Column 7: inner radius in arcsec
-            "r_out_au": arr[:, 7],         # Column 8: outer radius in AU
-            "r_out_arcsec": arr[:, 8]      # Column 9: outer radius in arcsec
-        }  
+            "width_arcsec": arr[:, 4],     # Column 4: width in arcsec  
+            "gap_depth": arr[:, 5],        # Column 5: gap depth (NaN for rings)
+            "r_in_au": arr[:, 6],          # Column 6: inner radius in AU
+            "r_in_arcsec": arr[:, 7],      # Column 7: inner radius in arcsec
+            "r_out_au": arr[:, 8],         # Column 8: outer radius in AU
+            "r_out_arcsec": arr[:, 9]      # Column 9: outer radius in arcsec
+        }
 
 
 

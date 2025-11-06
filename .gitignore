@@ -14,6 +14,7 @@
 *.pkl
 *.pyc
 *.csv
+*.npz
 
 # Output directories  
 Disk_Residual_Profile/
