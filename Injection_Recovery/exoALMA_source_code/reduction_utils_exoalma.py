@@ -12,6 +12,15 @@ from scipy import constants
 import matplotlib.image
 import shutil
 
+from casatools import table, ms
+from casatasks import split, flagdata, flagmanager, tclean, imfit, imhead
+import numpy as np
+import os
+
+tb = table()
+
+
+
 def LSRKvel_to_chan(msfile, field, spw, restfreq, LSRKvelocity):
     """
     Identifies the channel(s) corresponding to input LSRK velocities.

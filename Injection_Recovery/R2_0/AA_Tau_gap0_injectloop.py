@@ -1,12 +1,13 @@
 import os, sys, time
 import numpy as np
 import sys
-sys.path.append(r'D:\CPD_MPIA\Injection_Recovery\DSHARP_source_code')
+sys.path.append('/mnt/d/CPD_MPIA/Injection_Recovery/DSHARP_source_code')
 from inject_CPD import inject_CPD
 from frank.geometry import FixedGeometry
 from frank.radial_fitters import FrankFitter
 from frank.io import save_fit
-import diskdictionaryr2_0.py as disk
+sys.path.append('/mnt/d/CPD_MPIA/Injection_Recovery')
+import diskdictionaryr2_0 as disk
 
 
 # specify target disk and gap
@@ -39,7 +40,7 @@ FF = FrankFitter(Rmax=Rmax, N=Ncoll, geometry=geom, alpha=alpha,
 
 
 # load the visibility data
-dat = np.load(r'D:/exoALMA_disk_data/data/' + target + '_data.vis.npz')
+dat = np.load(r'/mnt/d/exoALMA_disk_data/data/' + target + '_time_ave_continuum.vis.npz')
 u, v, vis, wgt = dat['u'], dat['v'], dat['Vis'], dat['Wgt']
 
 
@@ -63,7 +64,7 @@ for i in range(len(F_cpd)):
     for j in range(n_mocks_per_F):
 
         # bookkeeping
-        file_suffix = '_F'+str(np.int(np.round(1e3*F_cpd[i]))) + \
+        file_suffix = '_F'+str(int(np.round(1e3*F_cpd[i]))) + \
                       'uJy_'+str(j).zfill(4)
 
         # inject a mock CPD into the data

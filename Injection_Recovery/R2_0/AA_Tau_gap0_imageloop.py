@@ -1,6 +1,7 @@
 import os, sys, time
 import numpy as np
 sys.path.append('../DSHARP_source_code')
+execfile('../DSHARP_source_code/reduction_utils.py')
 execfile('../DSHARP_source_code/JvM_correction_brief.py')
 execfile('../DSHARP_source_code/ImportMS.py')
 sys.path.append('../')

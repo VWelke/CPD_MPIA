@@ -363,7 +363,7 @@ class DiskResiduals_Median_SNR:
     # Standard Deviation Methods
     #------------------------------
 
-    def create_sigma_mask(self, robust_val="1.0", scale_factor=1.0, save_fits=False, use_full_fov=False):
+    def create_sigma_mask(self, robust_val="1.0", scale_factor=1.0, save_fits=False, use_full_fov=False, overwrite=False):
         """
         Create a 2D sigma mask from the radial profile standard deviation.
         
@@ -389,7 +389,9 @@ class DiskResiduals_Median_SNR:
         else:
             cube = self.get_cube(r, cube_type="residual")
             
-        
+        # Load the clean cube for intensity
+        cube_clean = self.get_cube(r, cube_type="clean", use_full_fov=False)
+
         # Get radial profile with assume_correlated=False 
         # so that dy is simple the standard deviation per bin
 
@@ -401,6 +403,14 @@ class DiskResiduals_Median_SNR:
             use_mad=True  # Use median absolute deviation for robust estimation
 
         )
+
+        _, y_clean, _ = cube_clean.radial_profile(
+            inc=self.inc,   
+            PA=self.PA,
+            unit='Jy/beam',
+            assume_correlated=False,
+            use_mad=True
+        )   
         
         # Save files locally in organized folders
         output_base = "Disk_Residual_Profile_Median_SNR"
@@ -413,8 +423,11 @@ class DiskResiduals_Median_SNR:
             disk_output_dir,
             f"{self.name}_residual_radial_profile{suffix}_robust{r}.txt"
         )
-        np.savetxt(profile_filename, np.column_stack([x, y, dy]),
-                header="radius [arcsec] intensity [Jy/beam] standard deviation [Jy/beam]")
+        if overwrite or not os.path.exists(profile_filename):
+            np.savetxt(profile_filename, np.column_stack([x, y, dy, y_clean]),
+                   header="radius [arcsec] intensity [Jy/beam] standard deviation [Jy/beam] clean intensity [Jy/beam]")
+        else:
+            print(f"[SKIP] {profile_filename} already exists and overwrite=False.")
         
         # Get 2D radius map
         # cube.disk_coords return a tuple of (rmap, theta_map, zmap)

@@ -2,7 +2,7 @@
 
 import pickle
 
-filename = "all_disk_dicts_r2_0.pkl"  # Change to the filename you want to load
+filename = "../all_disk_dicts_r2_0.pkl"  # Change to the filename you want to load
 with open(filename, "rb") as f:
-    disk_dicts = pickle.load(f)
+    disk = pickle.load(f)
 
