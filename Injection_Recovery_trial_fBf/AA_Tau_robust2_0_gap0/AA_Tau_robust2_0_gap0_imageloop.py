@@ -11,13 +11,13 @@ import diskdictionaryr2_0 as disk
 os.makedirs('resid_images', exist_ok=True)
 
 # specify target disk and gap
-target, gap_ix, subsuf = target, gap_ix, subsuf
+target, gap_ix, subsuf = "AA_Tau", 0, "0"
 
 # Specify which flux bin to process (can be set from pipeline script)
 # Example: flux_bin_uJy = 250  # Process 250 μJy flux bin
 # If not specified, default to looking for the old combined file
 
-flux_bin_uJy = flux_bin_uJy  # Set by pipeline script
+flux_bin_uJy = 24  # Set by pipeline script
 inj_file = f'injections/{target}_gap{gap_ix}_F{flux_bin_uJy}uJy_mpars.{subsuf}.txt'
 print(f"Processing specific flux bin: {flux_bin_uJy} μJy")
 

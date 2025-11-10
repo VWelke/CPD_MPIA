@@ -12,6 +12,7 @@ import os, sys, time
 import numpy as np
 import sys
 import platform
+import threading
 from joblib import Parallel, delayed
 
 # Cross-platform path resolution for DSHARP_source_code
@@ -78,7 +79,10 @@ u, v, vis, wgt = dat['u'], dat['v'], dat['Vis'], dat['Wgt']
 # Multicore configuration
 N_CORES = 8
 
-def process_mock_joblib(j, F_cpd_i, r_cpd_j, az_cpd_j, shared_data):
+# Thread-safe file writing lock
+file_lock = threading.Lock()
+
+def process_mock_joblib(j, F_cpd_i, r_cpd_j, az_cpd_j, shared_data, mpars_file):
     """Process single mock with joblib parallel processing"""
     # Unpack shared data
     u, v, vis, wgt = shared_data['u'], shared_data['v'], shared_data['vis'], shared_data['wgt']
@@ -114,8 +118,20 @@ def process_mock_joblib(j, F_cpd_i, r_cpd_j, az_cpd_j, shared_data):
               '_frank_profile_fit.txt mprofiles/')
     os.system('rm '+target+'_gap'+str(gap_ix)+file_suffix+'_frank*')
 
-    # return parameter values for writing to mpars file
-    return (int(np.round(1e3*F_cpd_i)), str(j).zfill(4), r_cpd_j, az_cpd_j)
+    # Write result immediately to mpars file (thread-safe)
+    result = (int(np.round(1e3*F_cpd_i)), str(j).zfill(4), r_cpd_j, az_cpd_j)
+    
+    with file_lock:
+        try:
+            with open(mpars_file, 'a') as f:  # Append mode
+                f.write('%i    %s    %.3f    %i\n' % result)
+                f.flush()  # Force write to disk
+            print(f"Mock {j} completed: {int(np.round(1e3*F_cpd_i))} μJy → written to {mpars_file}")
+        except Exception as e:
+            print(f"Error writing mock {j} to {mpars_file}: {e}")
+
+    # return parameter values 
+    return result
 
 # Create shared data dictionary for parallel processing
 shared_data = {
@@ -147,19 +163,20 @@ for i in range(len(F_cpd)):
     az_cpd = np.random.randint(-180, 180, n_mocks_per_F)
 
 
-    # Process all mocks in this flux bin in parallel
-    print(f"Using {N_CORES} cores for parallel processing of {n_mocks_per_F} mocks")
+    # Process all mocks in parallel with immediate writing
+    print(f"Using {N_CORES} cores for parallel processing of {n_mocks_per_F} mocks (writing immediately)")
     
+    # Create/clear the mpars file
+    with open(mpars_file, 'w') as f:
+        pass  # Create empty file
+    
+    # Process all mocks in parallel - each writes immediately when done
     results = Parallel(n_jobs=N_CORES, backend='threading')(
-        delayed(process_mock_joblib)(j, F_cpd[i], r_cpd[j], az_cpd[j], shared_data)
+        delayed(process_mock_joblib)(j, F_cpd[i], r_cpd[j], az_cpd[j], shared_data, mpars_file)
         for j in range(n_mocks_per_F)
     )
     
-    # Write all results to mpars file
-    with open(mpars_file, 'w') as f:  # Use 'w' instead of 'a' since we write all at once
-        for result in results:
-            if result:  # Check if result is not None
-                f.write('%i    %s    %.3f    %i\n' % result)
+    print(f"All {n_mocks_per_F} mocks completed in parallel")
     
     # Flux bin completed - ask user whether to continue
     print(f"\n=== Flux bin {flux_uJy} μJy completed ({n_mocks_per_F} mocks) ===")

@@ -85,4 +85,4 @@ for i in range(len(F_cpd)):
                     (np.int(np.round(1e3*F_cpd[i])), str(j).zfill(4), 
                      r_cpd[j], az_cpd[j]))
 
-print((time.time() - t0))
+print(time.time() - t0)

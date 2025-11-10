@@ -78,7 +78,7 @@ def get_flagchannels(ms_dict, output_prefix, velocity_range = np.array([-20,20])
             flagchannels_string+='%d:%d~%d' % (spw, np.min([chans[0], chans[1]]), np.max([chans[0], chans[1]]))
         else:
             flagchannels_string+=', %d:%d~%d' % (spw, np.min([chans[0], chans[1]]), np.max([chans[0], chans[1]]))
-    print(("# Flagchannels input string for %s: \'%s\'" % (ms_dict['name'], flagchannels_string)))
+    print("# Flagchannels input string for %s: \'%s\'" % (ms_dict['name'], flagchannels_string))
     return flagchannels_string
 
 def avg_cont(ms_dict, output_prefix, flagchannels = '', maxchanwidth = 125, datacolumn = 'data', contspws = None, width_array = None): 
@@ -149,7 +149,7 @@ def avg_cont(ms_dict, output_prefix, flagchannels = '', maxchanwidth = 125, data
 
         flagmanager(vis = msfile, mode = 'restore', versionname = 'before_cont_flags') #restore flagged spectral line channels       
     
-    print(("#Averaged continuum dataset saved to %s" % outputvis))  
+    print("#Averaged continuum dataset saved to %s" % outputvis)  
 
 def tclean_wrapper(vis, imagename, scales, smallscalebias = 0.6, mask = '', threshold = '0.2mJy', imsize = None, cellsize = None, interactive = False, robust = 0.5, gain = 0.3, niter = 50000, cycleniter = 300, uvtaper = [], savemodel = 'none'):
     """
@@ -277,7 +277,7 @@ def image_each_obs(ms_dict, prefix, scales, smallscalebias = 0.6, mask = '', thr
                mask = mask,
                nterms = 1)
 
-    print(("Each observation saved in the format %sOBSERVATIONNUMBER.image" % (prefix+'_'+ms_dict['name']+'_initcont_exec',)))
+    print("Each observation saved in the format %sOBSERVATIONNUMBER.image" % (prefix+'_'+ms_dict['name']+'_initcont_exec',))
 
     
 def fit_gaussian(imagename, region, dooff = False):
@@ -305,11 +305,11 @@ def fit_gaussian(imagename, region, dooff = False):
     peak_y = ycen+(peak_dec-phasecenter_dec)/deltay
     # Print
     if coordsystem=='J2000':
-        print(('#Peak of Gaussian component identified with imfit: J2000 %s' % au.rad2radec(imfitdict = imfitdict, hmsdms = True, delimiter = ' ')))
+        print('#Peak of Gaussian component identified with imfit: J2000 %s' % au.rad2radec(imfitdict = imfitdict, hmsdms = True, delimiter = ' '))
     elif coordsystem=='ICRS':
-        print(('#Peak of Gaussian component identified with imfit: ICRS %s' % au.rad2radec(imfitdict = imfitdict, hmsdms = True, delimiter = ' ')))
+        print('#Peak of Gaussian component identified with imfit: ICRS %s' % au.rad2radec(imfitdict = imfitdict, hmsdms = True, delimiter = ' '))
         J2000coords = au.ICRSToJ2000(au.rad2radec(imfitdict = imfitdict, delimiter = ' '))
-        print(('#Peak in J2000 coordinates: %s' % J2000coords))
+        print('#Peak in J2000 coordinates: %s' % J2000coords)
     else:
        print("#If the coordinates aren't in ICRS or J2000, then something weird is going on")
     # If the object was resolved, print the inclination, PA, major and minor axis
@@ -318,9 +318,9 @@ def fit_gaussian(imagename, region, dooff = False):
         majoraxis = imfitdict['deconvolved']['component0']['shape']['majoraxis']['value']
         minoraxis = imfitdict['deconvolved']['component0']['shape']['minoraxis']['value']
 
-        print(('#PA of Gaussian component: %.2f deg' % PA))
-        print(('#Inclination of Gaussian component: %.2f deg' % (np.arccos(minoraxis/majoraxis)*180/np.pi,)))
-    print(('#Pixel coordinates of peak: x = %.3f y = %.3f' % (peak_x, peak_y)))
+        print('#PA of Gaussian component: %.2f deg' % PA)
+        print('#Inclination of Gaussian component: %.2f deg' % (np.arccos(minoraxis/majoraxis)*180/np.pi,))
+    print('#Pixel coordinates of peak: x = %.3f y = %.3f' % (peak_x, peak_y))
 
 def split_all_obs(msfile, nametemplate):
     """
@@ -357,7 +357,7 @@ def split_all_obs(msfile, nametemplate):
         #start of CASA commands
         outputvis = nametemplate+'%d.ms' % i
         os.system('rm -rf '+outputvis)
-        print(("#Saving observation %d of %s to %s" % (i, msfile, outputvis)))
+        print("#Saving observation %d of %s to %s" % (i, msfile, outputvis))
         split(vis=msfile,
               spw = spw, 
               field = field, 
@@ -426,7 +426,7 @@ def export_MS(msfile):
     os.system('rm -rf %s' % MS_filename+'_spavg.ms')
     os.system('rm -rf '+MS_filename+'.vis.npz')
     np.savez(MS_filename+'.vis', u=u, v=v, Vis=Vis, Wgt=Wgt)
-    print(("#Measurement set exported to %s" % (MS_filename+'.vis.npz',)))
+    print("#Measurement set exported to %s" % (MS_filename+'.vis.npz',))
 
 
 def deproject_vis(data, bins=np.array([0.]), incl=0., PA=0., offx=0., offy=0., 
@@ -632,9 +632,9 @@ def estimate_flux_scale(reference, comparison, incl = 0, PA = 0, uvbins = None, 
 
     w = 1/err**2
     ratio_avg =  np.sum(w*ratio)/np.sum(w)
-    print(("#The ratio of the fluxes of %s to %s is %.5f" % (comparison, reference, ratio_avg)))
-    print(("#The scaling factor for gencal is %.3f for your comparison measurement" % (sqrt(ratio_avg))))
-    print(("#The error on the weighted mean ratio is %.3e, although it's likely that the weights in the measurement sets are off by some constant factor" % (1/np.sqrt(np.sum(w)),)))
+    print("#The ratio of the fluxes of %s to %s is %.5f" % (comparison, reference, ratio_avg))
+    print("#The scaling factor for gencal is %.3f for your comparison measurement" % (sqrt(ratio_avg)))
+    print("#The error on the weighted mean ratio is %.3e, although it's likely that the weights in the measurement sets are off by some constant factor" % (1/np.sqrt(np.sum(w)),))
     plt.figure()
     plt.errorbar(1e-3*rho_intersection, ratio, yerr = err, fmt = '.', label = 'Binned ratios')
     plt.plot(1e-3*rho_intersection, np.ones_like(ratio)*ratio_avg, label = 'weighted average')
@@ -656,7 +656,7 @@ def rescale_flux(vis, gencalparameter):
     gencal(vis = vis, caltable = caltable, caltype = 'amp', parameter = gencalparameter)
     applycal(vis = vis, gaintable = caltable, calwt = True, flagbackup = True)
     vis_rescaled = vis.replace('.ms', '_rescaled.ms')
-    print(("#Splitting out rescaled values into new MS: %s" % (vis_rescaled,)))
+    print("#Splitting out rescaled values into new MS: %s" % (vis_rescaled,))
     os.system('rm -rf '+vis_rescaled+'*')
     split(vis=vis, outputvis=vis_rescaled, datacolumn='corrected')
 
@@ -673,17 +673,17 @@ def estimate_SNR(imagename, disk_mask, noise_mask):
     beammajor = headerlist['beammajor']['value']
     beamminor = headerlist['beamminor']['value']
     beampa = headerlist['beampa']['value']
-    print(("#%s" % imagename))
-    print(("#Beam %.3f arcsec x %.3f arcsec (%.2f deg)" % (beammajor, beamminor, beampa)))
+    print("#%s" % imagename)
+    print("#Beam %.3f arcsec x %.3f arcsec (%.2f deg)" % (beammajor, beamminor, beampa))
     disk_stats = imstat(imagename = imagename, region = disk_mask)
     disk_flux = disk_stats['flux'][0]
-    print(("#Flux inside disk mask: %.2f mJy" % (disk_flux*1000,)))
+    print("#Flux inside disk mask: %.2f mJy" % (disk_flux*1000,))
     peak_intensity = disk_stats['max'][0]
-    print(("#Peak intensity of source: %.2f mJy/beam" % (peak_intensity*1000,)))
+    print("#Peak intensity of source: %.2f mJy/beam" % (peak_intensity*1000,))
     rms = imstat(imagename = imagename, region = noise_mask)['rms'][0]
-    print(("#rms: %.2e mJy/beam" % (rms*1000,)))
+    print("#rms: %.2e mJy/beam" % (rms*1000,))
     SNR = peak_intensity/rms
-    print(("#Peak SNR: %.2f" % (SNR,)))
+    print("#Peak SNR: %.2f" % (SNR,))
 
 def get_station_numbers(msfile, antenna_name):
     """
@@ -709,5 +709,5 @@ def get_station_numbers(msfile, antenna_name):
     for i in ant_numbers:
         matching_obs = np.unique(obsid[np.where(antenna1==i)])
         for j in matching_obs:
-            print(("#Observation ID %d: %s@%s" % (j, antenna_name, ant_stations[i])))
+            print("#Observation ID %d: %s@%s" % (j, antenna_name, ant_stations[i]))
 

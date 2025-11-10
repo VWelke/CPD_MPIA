@@ -124,16 +124,16 @@ for i in range(len(Fcpd)):
 # measured residual mean and dispersion in high-recovery flux bins
 rec_clip = 0.8
 print(' ')
-print(('mean flux bias when recovery fraction >= %.1f:' % (rec_clip)))
+print('mean flux bias when recovery fraction >= %.1f:' % (rec_clip))
 print('----------------------------------------------')
-print(('crit A:  %.1f +/- %.1f   (background = %.1f +/- %.1f)' % \
+print('crit A:  %.1f +/- %.1f   (background = %.1f +/- %.1f)' % \
       (np.mean(mu_A[frec_A >= rec_clip]), np.mean(sig_A[frec_A >= rec_clip]),
        np.mean(mu[Fi >= np.min(Fcpd[frec_A >= rec_clip])]),
-       np.mean(rms[Fi >= np.min(Fcpd[frec_A >= rec_clip])]))))
-print(('crit B:  %.1f +/- %.1f   (background = %.1f +/- %.1f)' % \
+       np.mean(rms[Fi >= np.min(Fcpd[frec_A >= rec_clip])])))
+print('crit B:  %.1f +/- %.1f   (background = %.1f +/- %.1f)' % \
       (np.mean(mu_B[frec_B >= rec_clip]), np.mean(sig_B[frec_B >= rec_clip]),
        np.mean(mu[Fi >= np.min(Fcpd[frec_B >= rec_clip])]), 
-       np.mean(rms[Fi >= np.min(Fcpd[frec_B >= rec_clip])]))))
+       np.mean(rms[Fi >= np.min(Fcpd[frec_B >= rec_clip])])))
 print(' ')
 
 # plot
@@ -174,10 +174,10 @@ for i in range(1,6):
     ys = -xd * np.sin(PAr) * np.cos(inclr) + yd * np.cos(PAr)
     DR = np.sqrt(xs**2 + ys**2)
     DT = 90 - np.degrees(np.arctan2(ys, xs))
-    print(('crit A: F = %i, r = %.3f, az = %i, rho=%.3f, PA = %i  (N = %i) ' % \
-          (fails_Ao[0], fails_Ao[1], fails_Ao[2], DR, DT, nctsA)))
+    print('crit A: F = %i, r = %.3f, az = %i, rho=%.3f, PA = %i  (N = %i) ' % \
+          (fails_Ao[0], fails_Ao[1], fails_Ao[2], DR, DT, nctsA))
     nfailsA += nctsA
-print(('fraction of crit A fails = %.2f' % (1.*nfailsA / len(FnA))))
+print('fraction of crit A fails = %.2f' % (1.*nfailsA / len(FnA)))
 print(' ')
 for i in range(1, 6):
     fails_Bo, nctsB = valsB[ctsB == np.sort(ctsB)[-i]][0], np.sort(ctsB)[-i]
@@ -187,8 +187,8 @@ for i in range(1, 6):
     ys = -xd * np.sin(PAr) * np.cos(inclr) + yd * np.cos(PAr)
     DR = np.sqrt(xs**2 + ys**2)
     DT = 90 - np.degrees(np.arctan2(ys, xs))
-    print(('crit B: F = %i, r = %.3f, az = %i, rho=%.3f, PA =%i  (N = %i) ' % \
-          (fails_Bo[0], fails_Bo[1], fails_Bo[2], DR, DT, nctsB)))
+    print('crit B: F = %i, r = %.3f, az = %i, rho=%.3f, PA =%i  (N = %i) ' % \
+          (fails_Bo[0], fails_Bo[1], fails_Bo[2], DR, DT, nctsB))
     nfailsB += nctsB
-print(('fraction of crit B fails = %.2f' % (1.*nfailsB / len(FnB))))
+print('fraction of crit B fails = %.2f' % (1.*nfailsB / len(FnB)))
 print(' ')
