@@ -22,7 +22,9 @@ subsuf = '0'		# suffix to attach to records (if partial work)
 # specify mock parameters
 F_cpd = np.arange(0.25, 0.00, -0.01)        # in mJy
 n_mocks_per_F = 500  			    # number of mocks per flux bin
-
+ # proposed solution , from figure 6 of Andrews, reduce range form 0.25-0.00 to 0.15-0.05 mJy as most embedds the 0.5 recovery fraction
+ # prioritise on the kinks, not gaps
+ # reduce n_mocks per F  -> planet kink lower position uncertainty due to smaller width..
 
 # -------
 
