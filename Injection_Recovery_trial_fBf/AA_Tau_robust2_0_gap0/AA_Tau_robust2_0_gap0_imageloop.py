@@ -7,12 +7,22 @@ execfile('../DSHARP_source_code/ImportMS.py')
 sys.path.append('../')
 import diskdictionaryr2_0 as disk
 
+# Create output directory for residual images
+os.makedirs('resid_images', exist_ok=True)
+
 # specify target disk and gap
-target, gap_ix, subsuf = 'AA_Tau', '0', '0'
+target, gap_ix, subsuf = target, gap_ix, subsuf
+
+# Specify which flux bin to process (can be set from pipeline script)
+# Example: flux_bin_uJy = 250  # Process 250 μJy flux bin
+# If not specified, default to looking for the old combined file
+
+flux_bin_uJy = flux_bin_uJy  # Set by pipeline script
+inj_file = f'injections/{target}_gap{gap_ix}_F{flux_bin_uJy}uJy_mpars.{subsuf}.txt'
+print(f"Processing specific flux bin: {flux_bin_uJy} μJy")
 
 
-# load mock injection parameters file data (as strings)
-inj_file = 'injections/'+target+'_gap'+gap_ix+'_mpars.'+subsuf+'.txt'
+print(f"Loading: {inj_file}")
 Fstr, mstr, rstr, azstr = np.loadtxt(inj_file, dtype=str).T
 
 
@@ -62,6 +72,6 @@ for i in range(len(Fstr)):
     for ext in ['.image', '.mask', '.model', '.pb', '.psf', '.residual', 
                 '.sumwt', '.JvMcorr.image']:
         os.system('rm -rf '+im_outfile+ext)
-    os.system('rm -rf  r"D:/exoALMA_disk_data/data/"'+target+'_data.'+resid_suffix+'.ms*')
+    os.system('rm -rf "D:/exoALMA_disk_data/data/'+target+'_data.'+resid_suffix+'.ms*"')
 
     print(time.time()-t0)

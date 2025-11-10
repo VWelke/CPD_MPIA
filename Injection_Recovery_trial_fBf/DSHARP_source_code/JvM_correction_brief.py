@@ -1,5 +1,8 @@
 import numpy as np
 import shutil
+from casatasks import imsmooth, immath
+from casatools import image as casac_image
+
 
 def gaussian_eval(params, data, center):
     """Returns a gaussian with the given parameters"""

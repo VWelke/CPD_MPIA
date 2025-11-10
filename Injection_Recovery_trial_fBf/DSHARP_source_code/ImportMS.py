@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from casatools import table as tb
 
 def ImportMS(msfile, modelfile, suffix='model', make_resid=False):
 
