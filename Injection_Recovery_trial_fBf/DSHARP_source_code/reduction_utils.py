@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 from math import sqrt
-from casatools import table as tb, ms, image as ia
+from casatools import table
+tb= table()
 from casatasks import split, flagdata, flagmanager, tclean, imfit, imhead, imstat, gencal, applycal
 
 def LSRKvel_to_chan(msfile, field, spw, restfreq, LSRKvelocity):

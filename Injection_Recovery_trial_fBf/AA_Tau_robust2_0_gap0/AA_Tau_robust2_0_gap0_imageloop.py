@@ -1,17 +1,18 @@
 import os, sys, time
 import numpy as np
 sys.path.append('../DSHARP_source_code')
-execfile('../DSHARP_source_code/reduction_utils.py')
-execfile('../DSHARP_source_code/JvM_correction_brief.py')
-execfile('../DSHARP_source_code/ImportMS.py')
-sys.path.append('../')
+exec(compile(open('../DSHARP_source_code/reduction_utils.py', "rb").read(), '../DSHARP_source_code/reduction_utils.py', 'exec'))
+exec(compile(open('../DSHARP_source_code/JvM_correction_brief.py', "rb").read(), '../DSHARP_source_code/JvM_correction_brief.py', 'exec'))
+exec(compile(open('../DSHARP_source_code/ImportMS.py', "rb").read(), '../DSHARP_source_code/ImportMS.py', 'exec')) 
+
+sys.path.append('.')  # Add current directory where diskdictionaryr2_0.py is located
 import diskdictionaryr2_0 as disk
 
 # Create output directory for residual images
 os.makedirs('resid_images', exist_ok=True)
 
 # specify target disk and gap
-target, gap_ix, subsuf = "AA_Tau", 0, "0"
+target, gap_ix, subsuf = "AA_Tau", "0", "0"
 
 # Specify which flux bin to process (can be set from pipeline script)
 # Example: flux_bin_uJy = 250  # Process 250 μJy flux bin
@@ -36,7 +37,7 @@ for i in range(len(Fstr)):
             '_F'+Fstr[i]+'uJy_'+mstr[i]+'_frank_uv_resid'
     resid_suffix = 'gap'+gap_ix+'.F'+Fstr[i]+'uJy_'+mstr[i]+'.resid'
     os.system('rm -rf '+target+'_data.'+resid_suffix+'.ms*')
-    ImportMS( r'D:/exoALMA_disk_data/data/' +target+'_data.ms', rfile, suffix=resid_suffix, 
+    ImportMS('/mnt/d/exoALMA_disk_data/data/'+target+'_time_ave_continuum.ms', rfile, suffix=resid_suffix, 
              make_resid=False)
 
     # prepare for imaging
@@ -49,14 +50,14 @@ for i in range(len(Fstr)):
               im_outfile+'.sumwt')
 
     # clean
-    tclean(vis= r'D:/exoALMA_disk_data/data/' +target+'_data.'+resid_suffix+'.ms',
+    tclean(vis='/mnt/d/exoALMA_disk_data/data/'+target+'_data.'+resid_suffix+'.ms',
            imagename=im_outfile, specmode='mfs', deconvolver='multiscale',
            imsize=1024, cell='.006arcsec', scales=disk.disk[target]['gscales'],
            mask=target+'_gap'+gap_ix+'.'+subsuf+'.custom.mask', 
            gain=0.3, cycleniter=300, cyclefactor=1, nterms=1, niter=50000,
            weighting='briggs', robust=disk.disk[target]['crobust'],
            uvtaper=disk.disk[target]['ctaper'], savemodel='none',
-           threshold=disk.disk[target]['gthresh'], interactive=False, 
+           threshold=disk.disk[target]['gthresh'][int(gap_ix)], interactive=False, 
            calcpsf=False)
 
     # perform the JvM correction
@@ -72,6 +73,6 @@ for i in range(len(Fstr)):
     for ext in ['.image', '.mask', '.model', '.pb', '.psf', '.residual', 
                 '.sumwt', '.JvMcorr.image']:
         os.system('rm -rf '+im_outfile+ext)
-    os.system('rm -rf "D:/exoALMA_disk_data/data/'+target+'_data.'+resid_suffix+'.ms*"')
+    os.system('rm -rf data/'+target+'_data.'+resid_suffix+'.ms*')
 
-    print(time.time()-t0)
+    print((time.time()-t0))

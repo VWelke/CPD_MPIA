@@ -1,65 +1,75 @@
 import os
 import numpy as np
-from casatools import table as tb
+from casatools import table
+import shutil
+
+tb = table()
 
 def ImportMS(msfile, modelfile, suffix='model', make_resid=False):
-
-    # parse msfile name
+    """
+    Copy a measurement set and replace its DATA column with model visibilities.
+    Optionally create a residual MS (DATA – model).
+    """
     filename = msfile
-    if filename[-3:] != '.ms':
+    if not filename.endswith('.ms'):
         print("MS name must end in '.ms'")
         return
 
-    # strip off the '.ms'
-    MS_filename = filename.replace('.ms', '')
+    MS_filename = filename[:-3]
+    out_ms = f"{MS_filename}.{suffix}.ms"
 
-    # copy the data MS into a model MS
-    os.system('rm -rf '+MS_filename+'.'+suffix+'.ms')
-    os.system('cp -r '+filename+' '+MS_filename+'.'+suffix+'.ms')
+    # Remove and copy
+    if os.path.exists(out_ms):
+        shutil.rmtree(out_ms)
+    shutil.copytree(filename, out_ms)
 
-    # open the model file and load the data
-    tb.open(MS_filename+'.'+suffix+'.ms')
+    # Read data
+    tb.open(out_ms)
     data = tb.getcol("DATA")
     flag = tb.getcol("FLAG")
     tb.close()
 
-    # identify the unflagged columns (should be all of them!)
     unflagged = np.squeeze(np.any(flag, axis=0) == False)
+    mdl = np.load(modelfile + '.npz')['V']
+    if mdl.ndim == 1:
+        mdl = mdl[np.newaxis, np.newaxis, :]
+        mdl = np.broadcast_to(mdl, (data.shape[0], data.shape[1], mdl.shape[-1]))
 
-    # load the model visibilities
-    mdl = (np.load(modelfile+'.npz'))['V']
+    print("MS DATA shape:", data.shape)
+    print("FLAG shape:", flag.shape)
+    print("Unflagged mask shape:", unflagged.shape)
+    print("Model visibilities shape:", mdl.shape)
+    print("Target slice shape:", data[:, :, unflagged].shape)
 
-    # replace with the model visibilities (equal in both polarizations)
+    # Inject model visibilities
     data[:, :, unflagged] = mdl
 
-    # re-pack those model visibilities back into the .ms file
-    tb.open(MS_filename+'.'+suffix+'.ms', nomodify=False)
-    tb.putcol("DATA", data)
+    # --- Correct writing with putvarcol() ---
+    tb.open(out_ms, nomodify=False)
+    nrows = tb.nrows()
+    vardata = {r: data[:, :, r] for r in range(nrows)}
+    tb.putvarcol("DATA", vardata)
     tb.flush()
     tb.close()
 
-
-    # make a residuals MS if requested
+    # --- Residual creation (optional) ---
     if make_resid:
+        resid_ms = f"{MS_filename}.resid.ms"
+        if os.path.exists(resid_ms):
+            shutil.rmtree(resid_ms)
+        shutil.copytree(filename, resid_ms)
 
-        # copy the data MS into a model MS
-        os.system('rm -rf '+MS_filename+'.resid.ms')
-        os.system('cp -r '+filename+' '+MS_filename+'.resid.ms')
-
-        # open the model file and load the data
-        tb.open(MS_filename+'.resid.ms')
+        tb.open(resid_ms)
         data = tb.getcol("DATA")
         flag = tb.getcol("FLAG")
         tb.close()
 
-        # identify the unflagged columns (should be all of them!)
         unflagged = np.squeeze(np.any(flag, axis=0) == False)
-
-        # replace with the model visibilities (equal in both polarizations)
         data[:, :, unflagged] -= mdl
 
-        # re-pack those model visibilities back into the .ms file
-        tb.open(MS_filename+'.resid.ms', nomodify=False)
-        tb.putcol("DATA", data)
+        tb.open(resid_ms, nomodify=False)  # ✅ fixed: write to residual MS
+        nrows = tb.nrows()
+        vardata = {r: data[:, :, r] for r in range(nrows)}
+        tb.putvarcol("DATA", vardata)
         tb.flush()
         tb.close()
