@@ -5,9 +5,9 @@ sys.path.append('../')
 import diskdictionary as disk
 
 # target disk/gap; iteration
-target = 'AS209'
+target = 'AA_Tau'
 gap = 0
-ix = '1'
+ix = '0'
 
 # load the injection file data
 inj_file = 'injections/'+target+'_gap'+str(gap)+'_mpars.'+ix+'.txt'
@@ -20,11 +20,14 @@ os.system('rm -rf ' + recov_file)
 
 
 # loop through injections
-for i in range(len(Fstr)):
+for i in range(5):  #range(len(Fstr)):
 
     # load the residual image, header
     im_file = target + '_gap' + str(gap) + '.F' + Fstr[i] + 'uJy_' + mstr[i]
-    hdu = fits.open('/data/sandrews/DSHARP_CPDs/CPD_search/resid_images/' + im_file + '.resid.JvMcorr.fits')
+    resid_path = '/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/AA_Tau_robust2_0_gap0/resid_images/'
+    hdu = fits.open(resid_path + im_file + '.resid.JvMcorr.fits')
+
+    # hdu = fits.open('/data/sandrews/DSHARP_CPDs/CPD_search/resid_images/' + im_file + '.resid.JvMcorr.fits')
     img = 1e6 * np.squeeze(hdu[0].data)    # in microJy/beam
     hd = hdu[0].header
     hdu.close()

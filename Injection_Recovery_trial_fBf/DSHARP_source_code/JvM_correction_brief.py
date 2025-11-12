@@ -29,7 +29,7 @@ def do_JvM_correction_and_get_epsilon(root):
     npix_window = 201
 
     # Open psf and read off the metadata
-    ia = casac.image()
+    ia = casac_image()
     ia.open(psf_file)
     psf_data_raw = ia.getregion()
     hdr = ia.summary(list=False)

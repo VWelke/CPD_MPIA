@@ -24,3 +24,62 @@ Disk_Residual_Profile/
 Median_SNR/all_disks.pkl
 Median_SNR/disk_obj.pkl
 disk_obj.pkl
+
+
+# ===============================
+# CASA / ALMA imaging outputs
+# ===============================
+*.image
+*.image.pbcor
+*.residual
+*.model
+*.mask
+*.mask0
+*.sumwt
+*.psf
+*.pb
+*.logtable
+*.tablelock
+*.table.dat
+*.table.info
+*.TSM0
+*.last
+*.log
+*.JvMcorr.image
+*.JvMcorr.fits
+
+# ===============================
+# DSHARP / CPD intermediate data
+# ===============================
+*.ms
+*.ms.flagversions
+*.ms.listobs
+*.ms.split
+*.npz
+*.npy
+*.pkl
+*.sav
+*.fits
+*.hdf5
+
+# ===============================
+# Temporary, runtime, and cache files
+# ===============================
+nohup.out
+imageloop.log
+recoveries/*.txt
+injections/*.txt
+resid_images/
+__pycache__/
+*.pyc
+*.tmp
+*.bak
+*.swp
+*.~lock*
+
+# ===============================
+# Jupyter, local config, etc.
+# ===============================
+*.ipynb_checkpoints/
+*.vscode/
+*.idea/
