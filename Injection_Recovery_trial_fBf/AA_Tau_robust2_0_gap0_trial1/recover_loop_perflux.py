@@ -1,34 +1,35 @@
 import os, sys, time
 import numpy as np
 from astropy.io import fits
-
+sys.path.append('../')
 import diskdictionaryr2_0 as disk
 
 # target disk/gap; iteration
 target = 'AA_Tau'
 gap = 0
 ix = '0'
-F = "24"
+# flux_bin_uJy should be set by the calling pipeline script
 
-# load the injection file data
-inj_file = 'injections/'+target+'_gap'+str(gap)+'_F'+F+'uJy_mpars.'+ix+'.txt'
+# File paths for this specific flux bin
+inj_file = f'injections/{target}_gap{gap}_F{flux_bin_uJy}uJy_mpars.{ix}.txt'
+recov_file = f'recoveries/{target}_gap{gap}_F{flux_bin_uJy}uJy_recoveries.{ix}.txt' 
+print(f"Processing specific flux bin: {flux_bin_uJy} μJy")
+
+print(f"Loading: {inj_file}")
 Fstr, mstr, rstr, azstr = np.loadtxt(inj_file, dtype=str).T
 Fcpd, mdl, rcpd, azcpd = np.loadtxt(inj_file).T
 
 # bookkeeping
-recov_file = 'recoveries/'+target+'_gap'+str(gap)+'_F'+F+'uJy_recoveries.'+ix+'.txt'
+os.makedirs('recoveries', exist_ok=True)
 os.system('rm -rf ' + recov_file)
 
 
 # loop through injections
-for i in range(4):  # Changed from 5 to 4 to match available files (0,1,2,3)
+for i in range(len(Fstr)):
 
     # load the residual image, header
     im_file = target + '_gap' + str(gap) + '.F' + Fstr[i] + 'uJy_' + mstr[i]
-    resid_path = '/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/AA_Tau_robust2_0_gap0/resid_images/'
-    hdu = fits.open(resid_path + im_file + '.resid.JvMcorr.fits')
-
-    # hdu = fits.open('/data/sandrews/DSHARP_CPDs/CPD_search/resid_images/' + im_file + '.resid.JvMcorr.fits')
+    hdu = fits.open('resid_images/' + im_file + '.JvMcorr.fits')
     img = 1e6 * np.squeeze(hdu[0].data)    # in microJy/beam
     hd = hdu[0].header
     hdu.close()
@@ -76,3 +77,5 @@ for i in range(4):  # Changed from 5 to 4 to match available files (0,1,2,3)
         f.write('%.0f  %.0f  %s  %.3f  %.3f  %4i  %4i  %.5f  %.5f  %.0f  %.0f\n' % \
                 (Fcpd[i], pk_SB, mstr[i], rcpd[i], pk_r, azcpd[i], pk_az,
                  pk_xs, pk_ys, emean, estd))
+
+print(f"Recovery analysis completed. Results saved to: {recov_file}")

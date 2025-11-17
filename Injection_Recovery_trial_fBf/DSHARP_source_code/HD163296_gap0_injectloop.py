@@ -4,7 +4,7 @@ from inject_CPD import inject_CPD
 from frank.geometry import FixedGeometry
 from frank.radial_fitters import FrankFitter
 from frank.io import save_fit
-import diskdictionary as disk
+import diskdictionaryr2_0 as disk
 
 
 # specify target disk and gap

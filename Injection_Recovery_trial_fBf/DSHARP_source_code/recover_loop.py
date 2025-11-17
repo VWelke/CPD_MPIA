@@ -1,21 +1,23 @@
 import os, sys, time
 import numpy as np
 from astropy.io import fits
-sys.path.append('../')
-import diskdictionary as disk
+#sys.path.append('../')
+sys.path.append(r'D:\CPD_MPIA\Injection_Recovery_trial_fBf\AA_Tau_robust2_0_gap0')
+import diskdictionaryr2_0 as disk
 
 # target disk/gap; iteration
 target = 'AA_Tau'
 gap = 0
 ix = '0'
+F = "24"
 
 # load the injection file data
-inj_file = 'injections/'+target+'_gap'+str(gap)+'_mpars.'+ix+'.txt'
+inj_file = 'injections/'+target+'_gap'+str(gap)+'_F'+F+'uJy_mpars.'+ix+'.txt'
 Fstr, mstr, rstr, azstr = np.loadtxt(inj_file, dtype=str).T
 Fcpd, mdl, rcpd, azcpd = np.loadtxt(inj_file).T
 
 # bookkeeping
-recov_file = 'recoveries/'+target+'_gap'+str(gap)+'_recoveries.'+ix+'.txt'
+recov_file = 'recoveries/'+target+'_gap'+str(gap)+'_F'+F+'uJy_recoveries.'+ix+'.txt'
 os.system('rm -rf ' + recov_file)
 
 
