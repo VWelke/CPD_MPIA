@@ -385,7 +385,9 @@ def export_MS(msfile):
     tb.close()
 
     # spectral averaging (1 channel per SPW)
-
+    # num_chan is a list of number of channels per SPW eg [1,1,8,1,1,8,8,1,1,1]
+    # and width = num_chan means that the width of each SPW is the full number of channels in that SPW, and so the output MS will have 1 channel per SPW
+    # if I let width = 1, then the output MS will have the same number of channels as the input MS
     os.system('rm -rf %s' % MS_filename+'_spavg.ms')
     split(vis=MS_filename+'.ms', width=num_chan, datacolumn='data',
     outputvis=MS_filename+'_spavg.ms')
