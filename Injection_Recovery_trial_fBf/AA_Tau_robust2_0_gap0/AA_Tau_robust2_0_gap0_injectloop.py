@@ -15,17 +15,18 @@ import platform
 import threading
 from joblib import Parallel, delayed
 
-# Cross-platform path resolution for DSHARP_source_code
-if platform.system() == 'Windows':
-    sys.path.append('D:\\CPD_MPIA\\Injection_Recovery_trial_fBf\\DSHARP_source_code')
-else:  # Linux/WSL
-    sys.path.append('/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/DSHARP_source_code')
 
-from inject_CPD import inject_CPD
 from frank.geometry import FixedGeometry
 from frank.radial_fitters import FrankFitter
 from frank.io import save_fit
+
+
 import diskdictionaryr2_0 as disk
+
+# Cross-platform path resolution for DSHARP_source_code
+sys.path.append('/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/DSHARP_source_code')
+
+from inject_CPD import inject_CPD
 
 
 os.makedirs('resid_vis', exist_ok=True)
@@ -42,8 +43,9 @@ os.makedirs(injection_folder, exist_ok=True)
 
 
 # specify mock parameters
-F_cpd = np.arange( disk.disk[target]['RMS']/1000, 0.25, 0.01)        # in mJy
-n_mocks_per_F = 100  			    # number of mocks per flux bin
+#F_cpd = np.arange( 2*disk.disk[target]['RMS']/1000, 0.25, 0.01)        # in mJy
+F_cpd = ([2*disk.disk[target]['RMS']/1000, 7*disk.disk[target]['RMS']/1000, 12*disk.disk[target]['RMS']/1000])   
+n_mocks_per_F = 50  			    # number of mocks per flux bin
  # proposed solution , from figure 6 of Andrews, reduce range form 0.25-0.00 to 0.15-0.05 mJy as most embedds the 0.5 recovery fraction
  # prioritise on the kinks, not gaps
  # reduce n_mocks per F  -> planet kink lower position uncertainty due to smaller width..
@@ -68,16 +70,14 @@ FF = FrankFitter(Rmax=Rmax, N=Ncoll, geometry=geom, alpha=alpha,
 
 # load the visibility data
 # Cross-platform path resolution for data directory
-if platform.system() == 'Windows':
-    data_path = 'D:\\exoALMA_disk_data\\data\\' + target + '_time_ave_continuum.vis.npz'
-else:  # Linux/WSL
-    data_path = '/mnt/d/exoALMA_disk_data/data/' + target + '_time_ave_continuum.vis.npz'
+
+data_path = '/mnt/d/exoALMA_disk_data/measurement_set_spavg/npz/' + target + '_time_ave_continuum_spavg.vis.npz'
 
 dat = np.load(data_path)
 u, v, vis, wgt = dat['u'], dat['v'], dat['Vis'], dat['Wgt']
 
 # Multicore configuration
-N_CORES = 8
+N_CORES = 10
 
 # Thread-safe file writing lock
 file_lock = threading.Lock()
