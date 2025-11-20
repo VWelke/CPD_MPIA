@@ -29,6 +29,7 @@ except ImportError:
 
 # Directories  
 ms_dir = "/mnt/d/exoALMA_disk_data/measurement_set_spavg/"
+vis_txt_dir = "/mnt/d/exoALMA_disk_data/measurement_set_spavg/vis_txt/"
 output_dir = "/mnt/d/exoALMA_disk_data//measurement_set_spavg/npz/"
 os.makedirs(output_dir, exist_ok=True)
 
@@ -38,7 +39,7 @@ targets = ['AA_Tau', 'CQ_Tau', 'DM_Tau', 'HD_14300', 'HD_34282', 'HD_135344B',
 
 for target in targets:
     ms_file = ms_dir + target + "_time_ave_continuum_spavg.ms"
-    temp_txt = f"{target}_time_ave_continuum_spavg_vis.txt"
+    temp_txt = vis_txt_dir + f"{target}_time_ave_continuum_spavg_vis.txt"
     npz_file = output_dir + target + "_time_ave_continuum_spavg_lambda.vis.npz"
     
     print(f"Processing {target}...")
