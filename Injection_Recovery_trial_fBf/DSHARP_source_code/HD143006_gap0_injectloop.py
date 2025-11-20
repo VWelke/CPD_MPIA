@@ -4,18 +4,19 @@ from inject_CPD import inject_CPD
 from frank.geometry import FixedGeometry
 from frank.radial_fitters import FrankFitter
 from frank.io import save_fit
-import diskdictionaryr2_0 as disk
+sys.path.append('../')
+import diskdictionary as disk
 
 
 # specify target disk and gap
-target = 'HD163296'	# CSD name
+target = 'HD143006'	# CSD name
 gap_ix = 0		# which gap CPD is in (based on dict list)
 subsuf = '0'		# suffix to attach to records (if partial work)
 
 
 # specify mock parameters
 F_cpd = np.arange(0.25, 0.00, -0.01)        # in mJy
-n_mocks_per_F = 500  			    # number of mocks per flux bin
+n_mocks_per_F = 500 			    # number of mocks per flux bin
 
 
 # -------
@@ -85,4 +86,4 @@ for i in range(len(F_cpd)):
                     (np.int(np.round(1e3*F_cpd[i])), str(j).zfill(4), 
                      r_cpd[j], az_cpd[j]))
 
-print((time.time() - t0))
+print(time.time() - t0)

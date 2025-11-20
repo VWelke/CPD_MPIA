@@ -1,12 +1,12 @@
 import os, sys, time
 import numpy as np
-exec(compile(open('JvM_correction_brief.py', "rb").read(), 'JvM_correction_brief.py', 'exec'))
-exec(compile(open('ImportMS.py', "rb").read(), 'ImportMS.py', 'exec'))
+execfile('JvM_correction_brief.py')
+execfile('ImportMS.py')
 sys.path.append('../')
 import diskdictionary as disk
 
 # specify target disk and gap
-target, gap_ix, subsuf = 'HD163296', '0', '1'
+target, gap_ix, subsuf = 'HD143006', '0', '1'
 
 
 # load mock injection parameters file data (as strings)
@@ -62,4 +62,6 @@ for i in range(len(Fstr)):
         os.system('rm -rf '+im_outfile+ext)
     os.system('rm -rf data/'+target+'_data.'+resid_suffix+'.ms*')
 
-    print((time.time()-t0))
+    print(time.time()-t0)
+
+

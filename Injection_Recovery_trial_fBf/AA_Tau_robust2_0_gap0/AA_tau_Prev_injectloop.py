@@ -12,21 +12,19 @@ import os, sys, time
 import numpy as np
 import sys
 import platform
-import threading
 from joblib import Parallel, delayed
 
+# Cross-platform path resolution for DSHARP_source_code
+if platform.system() == 'Windows':
+    sys.path.append('D:\\CPD_MPIA\\Injection_Recovery_trial_fBf\\DSHARP_source_code')
+else:  # Linux/WSL
+    sys.path.append('/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/DSHARP_source_code')
 
+from inject_CPD import inject_CPD
 from frank.geometry import FixedGeometry
 from frank.radial_fitters import FrankFitter
 from frank.io import save_fit
-
-
 import diskdictionaryr2_0 as disk
-
-# Cross-platform path resolution for DSHARP_source_code
-sys.path.append('/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/DSHARP_source_code')
-
-from inject_CPD import inject_CPD
 
 
 os.makedirs('resid_vis', exist_ok=True)
@@ -43,10 +41,11 @@ os.makedirs(injection_folder, exist_ok=True)
 
 
 # specify mock parameters
-#F_cpd = np.arange( 2*disk.disk[target]['RMS']/1000, 0.25, 0.01)        # in mJy
-F_cpd = ([2*disk.disk[target]['RMS']/1000, 7*disk.disk[target]['RMS']/1000, 12*disk.disk[target]['RMS']/1000])   
-n_mocks_per_F = 50  			    # number of mocks per flux bin
-
+F_cpd = np.arange( disk.disk[target]['RMS']/1000, 0.25, 0.01)        # in mJy
+n_mocks_per_F = 10  			    # number of mocks per flux bin
+ # proposed solution , from figure 6 of Andrews, reduce range form 0.25-0.00 to 0.15-0.05 mJy as most embedds the 0.5 recovery fraction
+ # prioritise on the kinks, not gaps
+ # reduce n_mocks per F  -> planet kink lower position uncertainty due to smaller width..
 
 # -------
 
@@ -68,30 +67,18 @@ FF = FrankFitter(Rmax=Rmax, N=Ncoll, geometry=geom, alpha=alpha,
 
 # load the visibility data
 # Cross-platform path resolution for data directory
-
-data_path = '/mnt/d/exoALMA_disk_data/measurement_set_spavg/npz/' + target + '_time_ave_continuum_spavg.vis.npz'
+if platform.system() == 'Windows':
+    data_path = 'D:\\exoALMA_disk_data\\data\\' + target + '_time_ave_continuum.vis.npz'
+else:  # Linux/WSL
+    data_path = '/mnt/d/exoALMA_disk_data/data/' + target + '_time_ave_continuum.vis.npz'
 
 dat = np.load(data_path)
 u, v, vis, wgt = dat['u'], dat['v'], dat['Vis'], dat['Wgt']
 
-print("=== Data Validation ===")
-print(f"u range: [{np.min(u):.3e}, {np.max(u):.3e}], NaN: {np.sum(np.isnan(u))}")
-print(f"v range: [{np.min(v):.3e}, {np.max(v):.3e}], NaN: {np.sum(np.isnan(v))}")
-print(f"vis range: [{np.min(np.abs(vis)):.3e}, {np.max(np.abs(vis)):.3e}], NaN: {np.sum(np.isnan(vis))}")
-print(f"wgt range: [{np.min(wgt):.3e}, {np.max(wgt):.3e}], NaN: {np.sum(np.isnan(wgt))}")
-
-# Check for problematic values
-print(f"Zero weights: {np.sum(wgt == 0)}")
-print(f"Infinite weights: {np.sum(np.isinf(wgt))}")
-
-
 # Multicore configuration
-N_CORES = 3 
+N_CORES = 5
 
-# Thread-safe file writing lock
-file_lock = threading.Lock()
-
-def process_mock_joblib(j, F_cpd_i, r_cpd_j, az_cpd_j, shared_data, mpars_file):
+def process_mock_joblib(j, F_cpd_i, r_cpd_j, az_cpd_j, shared_data):
     """Process single mock with joblib parallel processing"""
     # Unpack shared data
     u, v, vis, wgt = shared_data['u'], shared_data['v'], shared_data['vis'], shared_data['wgt']
@@ -127,9 +114,8 @@ def process_mock_joblib(j, F_cpd_i, r_cpd_j, az_cpd_j, shared_data, mpars_file):
               '_frank_profile_fit.txt mprofiles/')
     os.system('rm '+target+'_gap'+str(gap_ix)+file_suffix+'_frank*')
 
-
-    # return parameter values 
-    return result
+    # return parameter values for writing to mpars file
+    return (int(np.round(1e3*F_cpd_i)), str(j).zfill(4), r_cpd_j, az_cpd_j)
 
 # Create shared data dictionary for parallel processing
 shared_data = {
@@ -161,26 +147,40 @@ for i in range(len(F_cpd)):
     az_cpd = np.random.randint(-180, 180, n_mocks_per_F)
 
 
-    # Process all mocks in parallel with immediate writing
-    print(f"Using {N_CORES} cores for parallel processing of {n_mocks_per_F} mocks (writing immediately)")
+    # Process all mocks in this flux bin in parallel
+    print(f"Using {N_CORES} cores for parallel processing of {n_mocks_per_F} mocks")
     
-    # Create/clear the mpars file
-    with open(mpars_file, 'w') as f:
-        pass  # Create empty file
-    
-    # Process all mocks in parallel - each writes immediately when done
     results = Parallel(n_jobs=N_CORES, backend='threading')(
-        delayed(process_mock_joblib)(j, F_cpd[i], r_cpd[j], az_cpd[j], shared_data, mpars_file)
+        delayed(process_mock_joblib)(j, F_cpd[i], r_cpd[j], az_cpd[j], shared_data)
         for j in range(n_mocks_per_F)
     )
     
-    print(f"All {n_mocks_per_F} mocks completed in parallel")
+    # Write all results to mpars file
+    with open(mpars_file, 'w') as f:  # Use 'w' instead of 'a' since we write all at once
+        for result in results:
+            if result:  # Check if result is not None
+                f.write('%i    %s    %.3f    %i\n' % result)
     
     # Flux bin completed - ask user whether to continue
     print(f"\n=== Flux bin {flux_uJy} μJy completed ({n_mocks_per_F} mocks) ===")
     print(f"Mpars file saved: {mpars_file}")
     
- 
+    # Check for pause file or user input
+    if os.path.exists('PAUSE_AFTER_FLUX_BIN'):
+        print("PAUSE_AFTER_FLUX_BIN file detected. Pausing...")
+        while os.path.exists('PAUSE_AFTER_FLUX_BIN'):
+            print("Remove 'PAUSE_AFTER_FLUX_BIN' file to continue to next flux bin, or create 'STOP_AT_90_PERCENT' to exit.")
+            time.sleep(5)
+            if os.path.exists('STOP_AT_90_PERCENT'):
+                print("STOP_AT_90_PERCENT file detected. Stopping execution.")
+                print(f"Completed {i+1}/{len(F_cpd)} flux bins.")
+                exit()
+    
+    # Optional: Ask for user input (comment out if running unattended)
+    # response = input("Continue to next flux bin? (y/n/stop): ").lower()
+    # if response in ['n', 'no', 'stop']:
+    #     print(f"Stopping after flux bin {flux_uJy} μJy. Completed {i+1}/{len(F_cpd)} flux bins.")
+    #     break
 
 print(f"\nTotal time: {time.time() - t0:.1f} seconds")
 print(f"Completed all {len(F_cpd)} flux bins.")

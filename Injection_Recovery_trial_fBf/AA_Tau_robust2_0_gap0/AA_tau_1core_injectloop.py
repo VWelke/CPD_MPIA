@@ -1,21 +1,25 @@
 import os, sys, time
 import numpy as np
+
+sys.path.append('/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/DSHARP_source_code')
 from inject_CPD import inject_CPD
+
 from frank.geometry import FixedGeometry
 from frank.radial_fitters import FrankFitter
 from frank.io import save_fit
-import diskdictionary as disk
+import diskdictionaryr2_0 as disk
 
 
 # specify target disk and gap
-target = 'HD163296'	# CSD name
+target = 'AA_Tau'	# CSD name
 gap_ix = 0		# which gap CPD is in (based on dict list)
 subsuf = '0'		# suffix to attach to records (if partial work)
 
 
 # specify mock parameters
-F_cpd = np.arange(0.25, 0.00, -0.01)        # in mJy
-n_mocks_per_F = 500  			    # number of mocks per flux bin
+#F_cpd = np.arange(0.25, 0.00, -0.01)        # in mJy
+F_cpd = ([2*disk.disk[target]['RMS']/1000, 7*disk.disk[target]['RMS']/1000, 12*disk.disk[target]['RMS']/1000])        # in mJy
+n_mocks_per_F = 5  			    # number of mocks per flux bin
 
 
 # -------
@@ -33,7 +37,8 @@ FF = FrankFitter(Rmax=Rmax, N=Ncoll, geometry=geom, alpha=alpha,
                  weights_smooth=wsmth)
 
 # load the visibility data
-dat = np.load('data/'+target+'_data.vis.npz')
+# dat = np.load('/mnt/d/exoALMA_disk_data/data/' + target + '_time_ave_continuum.vis.npz')
+dat = np.load('/mnt/d/exoALMA_disk_data/measurement_set_spavg/npz/' + target + '_time_ave_continuum_spavg_lambda.vis.npz')
 u, v, vis, wgt = dat['u'], dat['v'], dat['Vis'], dat['Wgt']
 
 
@@ -57,7 +62,7 @@ for i in range(len(F_cpd)):
     for j in range(n_mocks_per_F):
 
         # bookkeeping
-        file_suffix = '_F'+str(np.int(np.round(1e3*F_cpd[i]))) + \
+        file_suffix = '_F'+str(int(np.round(1e3*F_cpd[i]))) + \
                       'uJy_'+str(j).zfill(4)
 
         # inject a mock CPD into the data
@@ -82,7 +87,7 @@ for i in range(len(F_cpd)):
         # record parameter values (F_cpd in uJy, j, r_cpd, az_cpd)
         with open(target+'_gap'+str(gap_ix)+'_mpars.'+subsuf+'.txt', 'a') as f:
             f.write('%i    %s    %.3f    %i\n' % \
-                    (np.int(np.round(1e3*F_cpd[i])), str(j).zfill(4), 
+                    (int(np.round(1e3*F_cpd[i])), str(j).zfill(4), 
                      r_cpd[j], az_cpd[j]))
 
 print(time.time() - t0)
