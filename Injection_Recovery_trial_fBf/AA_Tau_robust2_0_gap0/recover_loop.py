@@ -8,27 +8,24 @@ import diskdictionaryr2_0 as disk
 target = 'AA_Tau'
 gap = 0
 ix = '0'
-F = "24"
+
 
 # load the injection file data
-inj_file = 'injections/'+target+'_gap'+str(gap)+'_F'+F+'uJy_mpars.'+ix+'.txt'
+inj_file = 'injections/'+target+'_gap'+str(gap)+'_mpars.'+ix+'.txt'
 Fstr, mstr, rstr, azstr = np.loadtxt(inj_file, dtype=str).T
 Fcpd, mdl, rcpd, azcpd = np.loadtxt(inj_file).T
 
 # bookkeeping
-recov_file = 'recoveries/'+target+'_gap'+str(gap)+'_F'+F+'uJy_recoveries.'+ix+'.txt'
+recov_file = 'recoveries/'+target+'_gap'+str(gap)+'_recoveries.'+ix+'.txt'
 os.system('rm -rf ' + recov_file)
 
 
 # loop through injections
-for i in range(4):  # Changed from 5 to 4 to match available files (0,1,2,3)
+for i in range(len(Fstr)):
 
     # load the residual image, header
     im_file = target + '_gap' + str(gap) + '.F' + Fstr[i] + 'uJy_' + mstr[i]
-    resid_path = '/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/AA_Tau_robust2_0_gap0/resid_images/'
-    hdu = fits.open(resid_path + im_file + '.resid.JvMcorr.fits')
-
-    # hdu = fits.open('/data/sandrews/DSHARP_CPDs/CPD_search/resid_images/' + im_file + '.resid.JvMcorr.fits')
+    hdu = fits.open('/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/AA_Tau_robust2_0_gap0/resid_images/' + im_file + '.resid.JvMcorr.fits')
     img = 1e6 * np.squeeze(hdu[0].data)    # in microJy/beam
     hd = hdu[0].header
     hdu.close()

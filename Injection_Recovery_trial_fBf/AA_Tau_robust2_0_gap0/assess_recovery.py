@@ -18,7 +18,7 @@ ast_tol = 2
 ### Compute recovery fractions
 
 # load the recoveries file data
-rec_file = 'recoveries/'+target+'_gap'+gap_ix+'_F24uJy_recoveries.'+subsuf+'.txt'
+rec_file = 'recoveries/'+target+'_gap'+str(gap_ix)+'_recoveries.'+subsuf+'.txt'
 Fi, Fr, mdl, ri, rr, azi, azr, xr, yr, mu, rms = np.loadtxt(rec_file).T
 
 # convert the injected astrometry from disk-polar to sky-Cartesian
@@ -42,7 +42,7 @@ beam_fwhm = np.sqrt(3600**2 * hd['BMAJ'] * hd['BMIN'])
 beam_area = 3600**2 * np.pi * hd['BMAJ'] * hd['BMIN'] / (4 * np.log(2))
 
 # find maximum baseline length in kilometers
-vdat = np.load('/mnt/d/exoALMA_disk_data/data/'+target+'_time_ave_continuum.vis.npz')  
+vdat = np.load('/mnt/d/exoALMA_disk_data/measurement_set_spavg/npz/'+target+'_time_ave_continuum_spavg.vis.npz')  
 freq, wave = hd['CRVAL3'], 2.99792e5 / hd['CRVAL3']   # hz , mm 
 Bmax_km = (wave * np.sqrt(vdat['u']**2 + vdat['v']**2)).max()
 
@@ -90,7 +90,7 @@ for i in range(len(Fcpd)):
 
     
 # save the profiles in ASCII files
-np.savetxt('recoveries/'+target+'_gap'+gap_ix+'_rprofs.'+subsuf+'.txt', 
+np.savetxt('recoveries/'+target+'_gap'+str(gap_ix)+'_rprofs.'+subsuf+'.txt', 
            list(zip(Fcpd, frec_A, efrec_A, false_A, frec_B, efrec_B, false_B)), 
                 fmt='%.4f')
 

@@ -1,27 +1,9 @@
 # Load the disk dictionaries for robust2.0 
 
-import pickle
+
 import numpy as np
 
-# Try to load from pickle first, with fallback dictionary if it fails
-try:
-    # Handle numpy._core compatibility issue
-    try:
-        np._core
-    except AttributeError:
-        np._core = np.core
-    
-    filename = "../all_disk_dicts_r2_0.pkl"  # Change to the filename you want to load
-    with open(filename, "rb") as f:
-        disk = pickle.load(f)
-    print("Successfully loaded disk dictionary from pickle file")
-        
-except (FileNotFoundError, ModuleNotFoundError, AttributeError, ImportError) as e:
-    print(f"Pickle loading failed: {e}")
-    print("Using fallback disk dictionary...")
-    
-    # Comprehensive fallback disk dictionary for robust=2.0
-    disk = {
+disk = {
         'AA_Tau': {'PA': 93.77079777,
                 'RMS': np.float64(23.725058781565167),
                 'ccycleniter': 300,

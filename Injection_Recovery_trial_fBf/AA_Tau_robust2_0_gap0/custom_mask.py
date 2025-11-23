@@ -2,7 +2,10 @@
 import os, sys
 import numpy as np
 from astropy.io import fits
-sys.path.append('../')
+
+import sys, os
+sys.path.append(os.getcwd())
+
 import diskdictionaryr2_0 as disk
 
 def custom_mask(name, gix, filecopy, buffer_factor=1.0):

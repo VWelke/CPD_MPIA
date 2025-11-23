@@ -15,6 +15,13 @@
 *.pyc
 *.csv
 *.npz
+*.ms
+*.ms/
+*.fits
+*.lock
+*.info
+*.dat
+
 
 # Output directories  
 Disk_Residual_Profile/
