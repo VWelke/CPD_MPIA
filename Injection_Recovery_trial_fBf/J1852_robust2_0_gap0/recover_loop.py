@@ -5,7 +5,7 @@ from astropy.io import fits
 import diskdictionaryr2_0 as disk
 
 # target disk/gap; iteration
-target = 'AA_Tau'
+target = 'J1852'
 gap = 0
 ix = '0'
 
@@ -25,7 +25,7 @@ for i in range(len(Fstr)):
 
     # load the residual image, header
     im_file = target + '_gap' + str(gap) + '.F' + Fstr[i] + 'uJy_' + mstr[i]
-    hdu = fits.open('/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/AA_Tau_robust2_0_gap0/resid_images/' + im_file + '.resid.JvMcorr.fits')
+    hdu = fits.open('/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/J1852_robust2_0_gap0/resid_images/' + im_file + '.resid.JvMcorr.fits')
     img = 1e6 * np.squeeze(hdu[0].data)    # in microJy/beam
     hd = hdu[0].header
     hdu.close()

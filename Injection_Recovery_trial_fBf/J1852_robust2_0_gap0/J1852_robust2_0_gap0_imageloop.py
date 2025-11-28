@@ -15,7 +15,7 @@ import diskdictionaryr2_0 as disk
 os.makedirs('resid_images', exist_ok=True)
 
 # specify target disk and gap
-target, gap_ix, subsuf = "AA_Tau", "0", "0"
+target, gap_ix, subsuf = "J1852", "0", "0"
 
 
 
@@ -80,7 +80,7 @@ for i in range(len(Fstr)):
     for ext in ['.image', '.mask', '.model', '.pb', '.psf', '.residual', 
                 '.sumwt', '.JvMcorr.image']:
         os.system('rm -rf '+im_outfile+ext)
-    os.system('rm -rf data/'+target+'_data.'+resid_suffix+'.ms*')
+    os.system('rm -rf /mnt/d/exoALMA_disk_data/measurement_set_spavg/'+target+'_time_ave_continuum_spavg.'+resid_suffix+'.ms*')
 
     print((time.time()-t0))
 

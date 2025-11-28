@@ -9,7 +9,7 @@ from custom_mask import custom_mask
 import diskdictionaryr2_0 as disk
 
 # specify target disk, gap, and mock file index
-target, gap_ix, subsuf = 'AA_Tau', '0', '0'
+target, gap_ix, subsuf = 'J1852', '0', '0'
 
 # # # # # # #
 

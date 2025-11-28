@@ -7,7 +7,7 @@ from scipy.special import erfc # to calculate false positive , What's the chance
 import diskdictionaryr2_0 as disk
 
 # target disk/gap; iteration
-target, gap_ix, subsuf = 'AA_Tau', '0', '0'
+target, gap_ix, subsuf = 'J1852', '0', '0'
 
 # decisions!  How many pixels tolerated?  How many x astrometry RMS?
 npix_tol = 2
@@ -34,7 +34,7 @@ yi = ri * np.sin(azir) * np.cos(PAr) - \
 d_ir = np.sqrt((xi - xr)**2 + (yi - yr)**2)
 
 # load beam parameters from residual image header
-imdir = '/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/AA_Tau_robust2_0_gap0/resid_images/'
+imdir = '/mnt/d/CPD_MPIA/Injection_Recovery_trial_fBf/J1852_robust2_0_gap0/resid_images/'
 imfile = imdir+target+'_gap'+gap_ix+'.F'+str(int(Fi[0]))+'uJy'+ \
          '_0000.resid.JvMcorr.fits'
 rim, hd = np.squeeze(fits.open(imfile)[0].data), fits.open(imfile)[0].header
@@ -42,7 +42,7 @@ beam_fwhm = np.sqrt(3600**2 * hd['BMAJ'] * hd['BMIN'])
 beam_area = 3600**2 * np.pi * hd['BMAJ'] * hd['BMIN'] / (4 * np.log(2))
 
 # find maximum baseline length in kilometers
-vdat = np.load('/mnt/d/exoALMA_disk_data/measurement_set_spavg/npz/'+target+'_time_ave_continuum_spavg.vis.npz')  
+vdat = np.load('/mnt/d/exoALMA_disk_data/measurement_set_spavg/npz/'+target+'_time_ave_continuum_spavg_lambda.vis.npz')  
 freq, wave = hd['CRVAL3'], 2.99792e5 / hd['CRVAL3']   # hz , mm 
 Bmax_km = (wave * np.sqrt(vdat['u']**2 + vdat['v']**2)).max()
 
