@@ -1154,8 +1154,12 @@ class DiskResiduals_Median_SNR:
             pass  # some headers may not support HISTORY (very rare)
 
         # Write
+        if use_full_fov is not None: 
+            suffix = "_FullFOV" 
+        else:
+            suffix = ""
         os.makedirs(output_dir, exist_ok=True)
-        outname = os.path.join(output_dir, f"{self.name}_SNR_robust{rkey}.fits")
+        outname = os.path.join(output_dir, f"{self.name}_SNR{suffix}_robust{rkey}.fits")
         fits.writeto(outname, np.asarray(snr_map, dtype=np.float32), header, overwrite=True)
         print(f"[OK]  {self.name}: saved {outname}")
         return outname
