@@ -278,7 +278,8 @@ def plot_zhu_Mp_Mdot_flux(
     Mp_grid, Mdot_grid, Flux_vals,
     disk_arr, rp, alpha,
     target_flux_arr,
-    ax=None
+    ax=None,
+    beam_major_arcsec=0.1
 ):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -306,7 +307,7 @@ def plot_zhu_Mp_Mdot_flux(
     cf = ax.contourf(
         LOGMP, LOGMDOT, logFlux,
         levels=8,
-        cmap="Blues",
+        cmap="YlGn",
         extend="both"
     )
     if fig is not None:
@@ -317,11 +318,11 @@ def plot_zhu_Mp_Mdot_flux(
         )
 
     # 4. Q contours
-    Q_levels = (-10, -9, -8, -7, -6, -5, -4)
+    Q_levels = (-10, -8, -6, -4)
     cq = ax.contour(
         LOGMP, LOGMDOT, logQ,
         levels=Q_levels,
-        colors="brown",
+        colors="black",
         linestyles="-.",
         linewidths=2
     )
@@ -333,12 +334,12 @@ def plot_zhu_Mp_Mdot_flux(
 
     # 5. Sigma detection contours
     sigma_ujy = target_flux_arr[0]
-    sigma_levels = [2, 3, 5]
+    sigma_levels = [3, 5 ]
     flux_levels = [n * sigma_ujy for n in sigma_levels]
     cs = ax.contour(
         LOGMP, LOGMDOT, Flux_vals,
         levels=flux_levels,
-        colors="black",
+        colors="brown",
         linestyles="dashed",
         linewidths=2
     )
@@ -360,6 +361,34 @@ def plot_zhu_Mp_Mdot_flux(
 
     ax.set_xticks([-1.5, -0.5, 0.5])
     ax.set_yticks([-7.5 , -6.5, -5.5])
+
+
+    # plot the planet mass limit 
+    # So with the beam major axis , get the mass limit from the hills raidus
+    # beam major axis will be an input as arcsec
+    d_pc = disk_arr[2]        # distance in pc
+
+    # Convert beam to AU
+    beam_major_au = beam_major_arcsec * d_pc
+
+    # Stellar mass in Jupiter masses
+    M_star_jup = disk_arr[1] * 1047.56  # M_sun → M_jup
+
+    # Compute planet mass such that: beam = 0.3 * R_H
+    # Mp = 3 * M_star * (beam / (0.3 * rp))^3
+    Mp_limit = 3.0 * M_star_jup * (beam_major_au / (0.3 * rp))**3
+
+    logMp_limit = np.log10(Mp_limit)
+
+    # Plot vertical line
+    ax.axvline(
+        x=logMp_limit,
+        color='red',
+        linestyle='--',
+        linewidth=2,
+        label='Beam = 0.3 R_H'
+    )
+
 
     # 7. Set tick label sizes
     ax.tick_params(

@@ -381,7 +381,7 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
     Rout_frac_beam = res_au / (2 * RHill_arr)
 
     # ============= detection limit contours ==================
-    ax.plot(np.log10(Mp_grid), Rout_frac_beam, color = 'purple', linestyle='-.', lw=3)
+    ax.plot(np.log10(Mp_grid), Rout_frac_beam, color='purple', linestyle='-.', lw=3, label='_nolegend_')
 
     # ============= Labels ================
 
@@ -394,7 +394,7 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
     ax.set_ylim(y_min, y_max)
     ax.set_xlim(x_min, x_max)
     ax.tick_params(labelsize=rcParams['font.size']*0.9)  # <--- ADDED for tick label size
-    ax.legend(fontsize=rcParams['font.size']*0.9)  # <--- CHANGED from 8
+    #ax.legend(fontsize=rcParams['font.size']*0.9)  # <--- CHANGED from 8
 
     # ============= Title only if standalone ================
     if not external_ax:
