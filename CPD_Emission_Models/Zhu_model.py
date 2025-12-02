@@ -282,6 +282,7 @@ def plot_zhu_Mp_Mdot_flux(
 ):
     import numpy as np
     import matplotlib.pyplot as plt
+    from matplotlib import rcParams
 
     logMp = np.log10(Mp_grid)
     logMdot = np.log10(Mdot_grid)
@@ -298,85 +299,78 @@ def plot_zhu_Mp_Mdot_flux(
     else:
         fig = None
 
-    # 2. Main contourf
+    # 2. Set aspect ratio
+    ax.set_aspect('auto')  # <-- ADD THIS
+
+    # 3. Main contourf
     cf = ax.contourf(
         LOGMP, LOGMDOT, logFlux,
         levels=8,
-        cmap="Spectral",
+        cmap="Blues",
         extend="both"
     )
     if fig is not None:
         cbar = plt.colorbar(cf, ax=ax)
-        cbar.set_label(r"$\log_{10}(F_\nu\, [\mu{\rm Jy}])$", fontsize=12)
+        cbar.set_label(
+            r"$\log_{10}(F_\nu\, [\mu{\rm Jy}])$",
+            fontsize=rcParams['font.size']  # <-- USE rcParams
+        )
 
-    # 3. Q contours
-    Q_levels = np.linspace(logQ.min()+0.5, logQ.max()-0.5, 5)
+    # 4. Q contours
+    Q_levels = (-10, -9, -8, -7, -6, -5, -4)
     cq = ax.contour(
         LOGMP, LOGMDOT, logQ,
         levels=Q_levels,
-        colors="cyan",
-        linestyles="dashed",
-        linewidths=1.2
+        colors="brown",
+        linestyles="-.",
+        linewidths=2
     )
-    ax.clabel(cq, fmt=lambda x: f"Q={10**x:.1e}", fontsize=9)
+    ax.clabel(
+        cq,
+        fmt=lambda x: f"$M_{{p}}\\dot{{M}}_{{p}}$=$10^{{{int(x)}}}$",
+        fontsize=rcParams['font.size'] * 0.9  # <-- Slightly smaller for labels
+    )
 
-    # 4. Sigma detection contours
+    # 5. Sigma detection contours
     sigma_ujy = target_flux_arr[0]
-    sigma_levels = [1, 2, 3, 5]
+    sigma_levels = [2, 3, 5]
     flux_levels = [n * sigma_ujy for n in sigma_levels]
     cs = ax.contour(
         LOGMP, LOGMDOT, Flux_vals,
         levels=flux_levels,
-        colors="white",
+        colors="black",
         linestyles="dashed",
-        linewidths=1.6
+        linewidths=2
     )
-    ax.clabel(cs, fmt={lvl: f"{n}σ" for lvl, n in zip(flux_levels, sigma_levels)}, fontsize=10)
-
-    # 5. Axis formatting
-    ax.set_xlabel(r"$\log_{10}(M_p/M_{\rm Jup})$", fontsize=12)
-    ax.set_ylabel(r"$\log_{10}(\dot{M}\,[M_{\rm Jup}\,{\rm yr}^{-1}])$", fontsize=12)
-    ax.set_title(
-        rf"Zhu Model: {disk_arr[0]} at $r_p={rp}$ AU, $\alpha={alpha}$",
-        fontsize=14
+    ax.clabel(
+        cs,
+        fmt={lvl: f"{n}σ" for lvl, n in zip(flux_levels, sigma_levels)},
+        fontsize=rcParams['font.size'] * 0.9  # <-- USE rcParams
     )
 
-    # 6. Regime boundaries
-    Rfrac = 0.3
-    M_star_jup = disk_arr[1] * 1047.56
-    R_matrix = np.zeros_like(Flux_vals)
-    for i, Mp in enumerate(Mp_grid):
-        RHill = rp * (Mp / (3 * M_star_jup))**(1/3)
-        Rcpd = Rfrac * RHill * AU
-        R_matrix[i,:] = Rcpd
-
-    T_visc = np.zeros_like(Flux_vals)
-    T_pirr = np.zeros_like(Flux_vals)
-    T_sirr = np.zeros_like(Flux_vals)
-    for i, Mp in enumerate(Mp_grid):
-        for j, Mdot in enumerate(Mdot_grid):
-            R = R_matrix[i,j]
-            Lp = Lp_from_Mp(Mp) * L_sun
-            T_visc[i,j] = (3*G*(Mp*M_jup)*(Mdot*M_jup/sec_per_yr) /
-                            (8*np.pi*sigmaB*R**3))**0.25
-            T_pirr[i,j] = (0.1 * Lp / (4*np.pi*sigmaB*R**2))**0.25
-            Lstar = disk_arr[3] * L_sun
-            T_sirr[i,j] = (0.02 * Lstar / (8*np.pi*sigmaB*(rp*AU)**2))**0.25
-
-    regime_index = np.argmax(np.stack([T_visc, T_pirr, T_sirr]), axis=0)
-    logMp_grid, logMdot_grid = np.meshgrid(logMp, logMdot)
-    ax.contour(
-        logMp_grid, logMdot_grid, regime_index.T,
-        levels=[0.5, 1.5], colors="pink", linewidths=1.5
+    # 6. Axis formatting with rcParams
+    ax.set_xlabel(
+        r"$\log_{10}(M_p/M_{\rm Jup})$",
+        fontsize=rcParams['font.size']  # <-- USE rcParams
     )
-    ax.text(-0.8, -5.2, "viscous heating", color="pink", fontsize=12)
-    ax.text( 0.4, -8.0, "planet irradiation", color="pink", fontsize=12)
-    ax.text(-1.8, -7.5, "stellar irradiation", color="pink", fontsize=12)
+    ax.set_ylabel(
+        r"$\log_{10}(\dot{M}\,[M_{\rm Jup}\,{\rm yr}^{-1}])$",
+        fontsize=rcParams['font.size']  # <-- USE rcParams
+    )
+
+    ax.set_xticks([-1.5, -0.5, 0.5])
+    ax.set_yticks([-7.5 , -6.5, -5.5])
+
+    # 7. Set tick label sizes
+    ax.tick_params(
+        labelsize=rcParams['font.size'] * 0.9  # <-- USE rcParams
+    )
 
     if fig is not None:
         plt.tight_layout()
         plt.show()
-
+    
+    return cf  # <-- Return the mappable for colorbar
 
 
 # ============================

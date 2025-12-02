@@ -342,19 +342,23 @@ def compute_flux_map(
 
 def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
                   disk_arr, rp=165, alpha=1e-3, res_au = 7.4 ,
-                  color='Spectral', y_max=0.8, y_min=0.05,
+                  color='Spectral', y_max=0.8, y_min=0.05,x_min = -1.5, x_max =1,
                   sigma_ujy=None, det_sigma=None,
                   min=-5.5, max=-3.2,
-                  ax=None):   # <--- NEW
+                  ax=None):
 
     import matplotlib.pyplot as plt
     import numpy as np
+    from matplotlib import rcParams  # <--- ADDED for font consistency
 
     # ============= Create axis if needed ==================
     external_ax = True
     if ax is None:
         fig, ax = plt.subplots(figsize=(7, 5))
         external_ax = False
+
+    # ============= Set aspect ratio for consistency ==================
+    ax.set_aspect('auto')  # <--- ADDED for consistent subplot sizing
 
     # ============= Contourf map ==================
     levels = np.arange(min, max, 0.2)
@@ -366,43 +370,36 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
         cmap=color
     )
 
-    # Add colorbar ONLY if we’re not inside subplot
+    # Add colorbar ONLY if we're not inside subplot
     if not external_ax:
         cbar = plt.colorbar(cf, ax=ax)
-        cbar.set_label(r'$\log_{10}(M_{\rm CPD}/M_{\rm Jup})$', fontsize=11)
+        cbar.set_label(r'$\log_{10}(M_{\rm CPD}/M_{\rm Jup})$', fontsize=rcParams['font.size'])  # <--- CHANGED from 11
 
     # ============= Beam-limited Rout/RH curve ==================
     M_star_jup = disk_arr[1] * 1047.56
     RHill_arr = rp * (Mp_grid / (3 * M_star_jup))**(1/3)
     Rout_frac_beam = res_au / (2 * RHill_arr)
 
-    ax.plot(np.log10(Mp_grid), Rout_frac_beam,
-            color='red', lw=2, label='Beam limit')
-
-    # ============= sigma detection contours ==================
-    if sigma_ujy is not None:
-        sigma_levels = [3, 5]
-        for sigma in sigma_levels:
-            level = sigma * sigma_ujy
-            Rout_sigma = []
-            for j in range(len(Mp_grid)):
-                above = np.where(Flux_vals[:, j] >= level)[0]
-                Rout_sigma.append(
-                    Rout_frac_grid[above[0]] if len(above) > 0 else np.nan
-                )
-            ax.plot(np.log10(Mp_grid), Rout_sigma,
-                    linestyle='--', lw=1.4, color='white',
-                    label=f'{sigma}σ')
+    # ============= detection limit contours ==================
+    ax.plot(np.log10(Mp_grid), Rout_frac_beam, color = 'purple', linestyle='-.', lw=3)
 
     # ============= Labels ================
-    ax.set_xlabel(r"$\log_{10}(M_p/M_{Jup})$")
-    ax.set_ylabel(r"$R_{\rm cpd}/R_H$")
+
+    ax.set_xlabel(r"$\log_{10}(M_p/M_{Jup})$", fontsize=rcParams['font.size'])  # <--- ADDED fontsize
+    ax.set_ylabel(r"$R_{\rm cpd}/R_H$", fontsize=rcParams['font.size'])  # <--- ADDED fontsize
+    from matplotlib.ticker import MaxNLocator
+
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=3, prune=None))
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=3, prune=None))
     ax.set_ylim(y_min, y_max)
-    ax.legend(fontsize=8)
+    ax.set_xlim(x_min, x_max)
+    ax.tick_params(labelsize=rcParams['font.size']*0.9)  # <--- ADDED for tick label size
+    ax.legend(fontsize=rcParams['font.size']*0.9)  # <--- CHANGED from 8
 
     # ============= Title only if standalone ================
     if not external_ax:
-        ax.set_title(f"{disk_arr[0]} at $r_p$={rp:.1f} AU, α={alpha}")
+        ax.set_title(f"{disk_arr[0]} at $r_p$={rp:.1f} AU, α={alpha}", 
+                     fontsize=rcParams['font.size'])  # <--- ADDED fontsize
         plt.tight_layout()
         plt.show()
 
