@@ -111,7 +111,7 @@ def irradiation_temperature(R, Rp, Mp, Mdot, Lplanet, Lstar, rp, T_ISM):
     T_irr = ( L_irr / (40*np.pi*sigmaB*R**2) )**0.25
 
     # intrinsic planet irradiation
-    T_irr_p = (0.1 * Lplanet / (4*np.pi*sigmaB*R**2))**0.25
+    T_irr_p = (0.1 * Lplanet / (40*np.pi*sigmaB*R**2))**0.25
 
     # stellar irradiation at distance rp
     phi = 0.02
@@ -215,7 +215,12 @@ def flux_mm(R, Tb, lam_mm, d_pc ,Sigma):
 
 def calculate_disk_properties_zhu(M_star=1.0, Mp=1.0, Mdot=1e-6, alpha=1e-3, rp=20,
                   lam_mm=1.3, T_ISM=10, Lstar=1.0, kappaR=10, mu=2.3,
-                  d_pc=140, Rout=None, Nr=200):
+                  d_pc=140, Rout=None, Nr=200 ,
+                    use_viscous=True,
+                    use_boundary=True,
+                    use_planet=True,
+                    use_stellar=True,
+                    use_ISM=True):
 
     # convert
     M_star, Mp_cgs, Mdot_cgs, rp_cgs, Lstar_cgs,Rp_cgs, Lplanet = convert_inputs(
@@ -234,9 +239,27 @@ def calculate_disk_properties_zhu(M_star=1.0, Mp=1.0, Mdot=1e-6, alpha=1e-3, rp=
     R = radial_grid(Rp_cgs, Rout_cgs, Nr)
 
     # heating
-    T_ext, T_irr, T_irr_p, T_irr_star = irradiation_temperature(R, Rp_cgs, Mp_cgs, Mdot_cgs,
-                                                               Lplanet, Lstar_cgs, rp_cgs, T_ISM)
-    Teff  = effective_temperature(R, Rp_cgs, Mp_cgs, Mdot_cgs)
+    # ==========================================================
+    # HEATING with toggle switches
+    # ==========================================================
+    T_ext_raw, T_irr, T_irr_p, T_irr_star = irradiation_temperature(
+        R, Rp_cgs, Mp_cgs, Mdot_cgs, Lplanet, Lstar_cgs, rp_cgs, T_ISM
+    )
+
+    # Apply switches to individual irradiation components
+    T_irr      = T_irr      if use_boundary else 0.0
+    T_irr_p    = T_irr_p    if use_planet   else 0.0
+    T_irr_star = T_irr_star if use_stellar  else 0.0
+    T_ISM_used = T_ISM      if use_ISM      else 0.0
+
+    # Rebuild external temperature
+    T_ext = (T_irr**4 + T_irr_p**4 + T_irr_star**4 + T_ISM_used**4)**0.25
+
+    # Apply viscous toggle
+    if use_viscous:
+        Teff = effective_temperature(R, Rp_cgs, Mp_cgs, Mdot_cgs)
+    else:
+        Teff = np.zeros_like(R)
 
     # Σ
     Sigma6 = sigma_viscous(R, Rp_cgs, Mp_cgs, Mdot_cgs, alpha, kappaR, mu)
@@ -380,14 +403,56 @@ def plot_zhu_Mp_Mdot_flux(
 
     logMp_limit = np.log10(Mp_limit)
 
-    # Plot vertical line
-    ax.axvline(
-        x=logMp_limit,
-        color='red',
-        linestyle='--',
-        linewidth=2,
-        label='Beam = 0.3 R_H'
+    # Plot optically line for 10^-7 MpMdot
+    Q_thick = (Q)**0.25 * Mp_grid[None, :]**(2/3)
+
+    # Log so we can contour in Mp–Mdot space
+    logQ_thick = np.log10(Q_thick)
+
+    # Choose a level to draw (e.g. the Q~1 contour)
+    #thick_levels = [0.0]   # choose 10^0 as the reference, adjust if needed
+
+    ct = ax.contour(
+        LOGMP, LOGMDOT, logQ_thick,
+        levels=1,
+        colors="blue",
+        linestyles=":",
+        linewidths=2.5
     )
+
+    ax.clabel(
+        ct,
+        fmt=lambda x: r"thick",
+        fontsize=rcParams['font.size']*0.8
+    )
+
+
+
+    #   optically thin region
+
+    #Q_thin = (Q)**0.25 * Mp_grid[None, :]**(2/3)*Mdot_grid[:, None]**(1)
+    Q_thin = (Q)**0.25 *Mdot_grid[:, None]**(1)* Mp_grid[None, :]**(2/3)
+
+    # Log so we can contour in Mp–Mdot space
+    logQ_thin = np.log10(Q_thin)
+
+    # Choose a level to draw (e.g. the Q~1 contour)
+    #thick_levels = [0.0]   # choose 10^0 as the reference, adjust if needed
+
+    ct = ax.contour(
+        LOGMP, LOGMDOT, logQ_thin,
+        levels=3,
+        colors="orange",
+        linestyles=":",
+        linewidths=2.5
+    )
+
+    ax.clabel(
+        ct,
+        fmt=lambda x: r"thin",
+        fontsize=rcParams['font.size']*0.8
+    )
+
 
 
     # 7. Set tick label sizes
@@ -415,6 +480,7 @@ def compute_flux_map_zhu_MpMdot(
     Mp_min=-2, Mp_max=1, n_Mp=40,
     Mdot_min=-9, Mdot_max=-4, n_Mdot=40,
     verbose=True
+    
 ):
     """
     Compute Zhu flux map in the (Mp, Mdot) plane
