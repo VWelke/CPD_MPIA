@@ -392,7 +392,7 @@ def plot_zhu_Mp_Mdot_flux(
     d_pc = disk_arr[2]        # distance in pc
 
     # Convert beam to AU
-    beam_major_au = beam_major_arcsec * d_pc
+    beam_major_au = beam_major_arcsec * d_pc/2
 
     # Stellar mass in Jupiter masses
     M_star_jup = disk_arr[1] * 1047.56  # M_sun → M_jup
@@ -402,6 +402,11 @@ def plot_zhu_Mp_Mdot_flux(
     Mp_limit = 3.0 * M_star_jup * (beam_major_au / (0.3 * rp))**3
 
     logMp_limit = np.log10(Mp_limit)
+    if logMp_limit < 1.0:
+        
+        ax.axvline(logMp_limit, color='purple', linestyle='-.', linewidth=2.5, 
+               label=rf'$M_p={Mp_limit:.2f}\,M_{{\rm Jup}}$')
+        ax.legend(fontsize=rcParams['font.size']*0.8, loc='lower right')
 
     # Plot optically line for 10^-7 MpMdot
     Q_thick = (Q)**0.25 * Mp_grid[None, :]**(2/3)
