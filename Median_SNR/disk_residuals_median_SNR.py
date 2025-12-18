@@ -1154,7 +1154,7 @@ class DiskResiduals_Median_SNR:
             pass  # some headers may not support HISTORY (very rare)
 
         # Write
-        if use_full_fov is not None: 
+        if use_full_fov is True: 
             suffix = "_FullFOV" 
         else:
             suffix = ""

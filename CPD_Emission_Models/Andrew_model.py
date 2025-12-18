@@ -383,6 +383,10 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
     # ============= detection limit contours ==================
     ax.plot(np.log10(Mp_grid), Rout_frac_beam, color='purple', linestyle='-.', lw=3, label='_nolegend_')
 
+
+    # add value for range of Mdot from smallest to largest Mp to 
+
+
     # ============= Labels ================
 
     ax.set_xlabel(r"$\log_{10}(M_p/M_{Jup})$", fontsize=rcParams['font.size'])  # <--- ADDED fontsize

@@ -302,7 +302,9 @@ def plot_zhu_Mp_Mdot_flux(
     disk_arr, rp, alpha,
     target_flux_arr,
     ax=None,
-    beam_major_arcsec=0.1
+    beam_major_arcsec=0.1,
+    plot_thick_thin =True,
+    plot_Q = True 
 ):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -329,9 +331,9 @@ def plot_zhu_Mp_Mdot_flux(
     # 3. Main contourf
     cf = ax.contourf(
         LOGMP, LOGMDOT, logFlux,
-        levels=8,
-        cmap="YlGn",
-        extend="both"
+        levels=6,
+        cmap="YlGnBu",
+        extend=None
     )
     if fig is not None:
         cbar = plt.colorbar(cf, ax=ax)
@@ -342,18 +344,29 @@ def plot_zhu_Mp_Mdot_flux(
 
     # 4. Q contours
     Q_levels = (-10, -8, -6, -4)
-    cq = ax.contour(
-        LOGMP, LOGMDOT, logQ,
-        levels=Q_levels,
-        colors="black",
-        linestyles="-.",
-        linewidths=2
-    )
-    ax.clabel(
-        cq,
-        fmt=lambda x: f"$M_{{p}}\\dot{{M}}_{{p}}$=$10^{{{int(x)}}}$",
-        fontsize=rcParams['font.size'] * 0.9  # <-- Slightly smaller for labels
-    )
+    if plot_Q == True: 
+        cq = ax.contour(
+            LOGMP, LOGMDOT, logQ,
+            levels=Q_levels,
+            colors="black",
+            linestyles="-.",
+            linewidths=2,
+            alpha = 0.8
+        )
+        ax.clabel(
+            cq,
+            fmt=lambda x: f"$M_{{p}}\\dot{{M}}_{{p}}$=$10^{{{int(x)}}}$",
+            fontsize=rcParams['font.size'] * 0.9  # <-- Slightly smaller for labels
+        )
+    else:
+        pass
+
+
+    #x_line = np.array([logMp.min(), logMp.max()])
+    #y_line = x_line - 6.0
+    #ax.plot(x_line, y_line, color='gray', linestyle='--', linewidth=2.0, alpha = 0.6,
+    #        )
+    
 
     # 5. Sigma detection contours
     sigma_ujy = target_flux_arr[0]
@@ -382,7 +395,7 @@ def plot_zhu_Mp_Mdot_flux(
         fontsize=rcParams['font.size']  # <-- USE rcParams
     )
 
-    ax.set_xticks([-1.5, -0.5, 0.5])
+    ax.set_xticks([-2, -1, 0,1])
     ax.set_yticks([-7.5 , -6.5, -5.5])
 
 
@@ -406,9 +419,17 @@ def plot_zhu_Mp_Mdot_flux(
         
         ax.axvline(logMp_limit, color='purple', linestyle='-.', linewidth=2.5, 
                label=rf'$M_p={Mp_limit:.2f}\,M_{{\rm Jup}}$')
-        ax.legend(fontsize=rcParams['font.size']*0.8, loc='lower right')
+        ax.legend(fontsize=rcParams['font.size']*0.8, loc='upper right')
 
+
+    #--------------------------------------------
+    #
     # Plot optically line for 10^-7 MpMdot
+    #
+    #--------------------------------------------
+
+
+
     Q_thick = (Q)**0.25 * Mp_grid[None, :]**(2/3)
 
     # Log so we can contour in Mp–Mdot space
@@ -416,20 +437,6 @@ def plot_zhu_Mp_Mdot_flux(
 
     # Choose a level to draw (e.g. the Q~1 contour)
     #thick_levels = [0.0]   # choose 10^0 as the reference, adjust if needed
-
-    ct = ax.contour(
-        LOGMP, LOGMDOT, logQ_thick,
-        levels=1,
-        colors="blue",
-        linestyles=":",
-        linewidths=2.5
-    )
-
-    ax.clabel(
-        ct,
-        fmt=lambda x: r"thick",
-        fontsize=rcParams['font.size']*0.8
-    )
 
 
 
@@ -444,19 +451,35 @@ def plot_zhu_Mp_Mdot_flux(
     # Choose a level to draw (e.g. the Q~1 contour)
     #thick_levels = [0.0]   # choose 10^0 as the reference, adjust if needed
 
-    ct = ax.contour(
-        LOGMP, LOGMDOT, logQ_thin,
-        levels=3,
-        colors="orange",
-        linestyles=":",
-        linewidths=2.5
-    )
+    if plot_thick_thin:
+        ct = ax.contour(
+            LOGMP, LOGMDOT, logQ_thin,
+            levels=1,
+            colors="orange",
+            linestyles=":",
+            linewidths=2.5
+        )
 
-    ax.clabel(
-        ct,
-        fmt=lambda x: r"thin",
-        fontsize=rcParams['font.size']*0.8
-    )
+        ax.clabel(
+            ct,
+            fmt=lambda x: r"thin",
+            fontsize=rcParams['font.size']*0.8
+        )
+        ct = ax.contour(
+            LOGMP, LOGMDOT, logQ_thick,
+            levels=1,
+            colors="blue",
+            linestyles=":",
+            linewidths=2.5
+        )
+
+        ax.clabel(
+            ct,
+            fmt=lambda x: r"thick",
+            fontsize=rcParams['font.size']*0.8
+        )
+    else:
+        pass
 
 
 
@@ -479,8 +502,7 @@ def plot_zhu_Mp_Mdot_flux(
 def compute_flux_map_zhu_MpMdot(
     disk_arr,
     rp=165,
-    Rout_frac=0.3,
-    lam_mm=1.25,
+    lam_mm=0.9,
     alpha=1e-3,
     Mp_min=-2, Mp_max=1, n_Mp=40,
     Mdot_min=-9, Mdot_max=-4, n_Mdot=40,
@@ -507,7 +529,7 @@ def compute_flux_map_zhu_MpMdot(
 
     for j, Mp in enumerate(Mp_grid):
         RHill = rp * (Mp / (3 * M_star_jup))**(1/3)
-        Rout = Rout_frac * RHill
+        Rout = 0.3 * RHill
 
         for i, Mdot in enumerate(Mdot_grid):
 
@@ -531,3 +553,139 @@ def compute_flux_map_zhu_MpMdot(
                 print(f"Mp={Mp:.3f}, Mdot={Mdot:.2e}, Flux={out['F_nu_tot']:.3f}")
 
     return Mp_grid, Mdot_grid, Flux_map, Q_map
+
+
+
+
+
+#------------------------------------------------
+#       Mp against alpha plot function
+#------------------------------------------------
+
+
+def compute_flux_map_zhu_MpAlpha(
+    disk_arr,
+    Mdot=None,
+    rp=165,
+    lam_mm=0.9,
+    Mp_min=-2, Mp_max=1, n_Mp=40,
+    alpha_min=-4, alpha_max=-1, n_alpha=30,
+    verbose=True
+):
+    """
+    Compute flux map in (Mp, alpha) space at fixed Mdot.
+
+    Returns:
+        Mp_grid (n_Mp)
+        alpha_grid (n_alpha)
+        Flux_map (n_alpha, n_Mp)  ← flux at each (alpha, Mp)
+    """
+    Mp_grid = np.logspace(Mp_min, Mp_max, n_Mp)
+    alpha_grid = np.logspace(alpha_min, alpha_max, n_alpha)
+
+    Flux_map = np.zeros((n_alpha, n_Mp))
+    Q_map = np.zeros_like(Flux_map)
+
+    M_star_jup = disk_arr[1] * 1047.56
+
+    for j, Mp in enumerate(Mp_grid):
+        RHill = rp * (Mp / (3 * M_star_jup))**(1/3)
+        Rout = 0.3 * RHill
+
+        for i, alpha in enumerate(alpha_grid):
+            Mdot_use = (Mp / 1e6) if (Mdot is None) else Mdot  
+            out = calculate_disk_properties_zhu(
+                M_star=disk_arr[1],
+                Mp=Mp,
+                Mdot=Mdot_use,
+                alpha=alpha,
+                rp=rp,
+                d_pc=disk_arr[2],
+                lam_mm=lam_mm,
+                T_ISM=10.0,
+                Lstar=disk_arr[3],
+                Rout=Rout
+            )
+            Flux_map[i, j] = out["F_nu_tot"]
+
+            if verbose and (i % 10 == 0 and j % 10 == 0):
+                print(f"Mp={Mp:.3f}, alpha={alpha:.2e}, Flux={out['F_nu_tot']:.3f}")
+
+    return Mp_grid, alpha_grid, Flux_map
+
+def plot_zhu_Mp_alpha_flux(
+    Mp_grid, alpha_grid, Flux_vals,
+    disk_arr, rp, Mdot,
+    target_flux_arr,
+    beam_major_arcsec=0.1,
+    ax=None
+):
+    import matplotlib.pyplot as plt
+    from matplotlib import rcParams
+
+    LOGMP = np.log10(Mp_grid)
+    LOGALPHA = np.log10(alpha_grid)
+    LOGMP_MESH, LOGALPHA_MESH = np.meshgrid(LOGMP, LOGALPHA)
+
+    min_flux = min(target_flux_arr)
+    Flux_masked = np.where(Flux_vals >= min_flux, Flux_vals, np.nan)
+    logFlux = np.log10(Flux_masked)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(8, 6))
+    else:
+        fig = None
+
+    cf = ax.contourf(
+        LOGMP_MESH, LOGALPHA_MESH, logFlux,
+        levels=7, cmap="YlOrBr", extend = None
+    )
+    if fig is not None:
+        cbar = plt.colorbar(cf, ax=ax)
+        cbar.set_label(r"$\log_{10}(F_\nu\, [\mu{\rm Jy}])$", fontsize=rcParams['font.size'])
+
+    # detection contours
+    sigma_ujy = target_flux_arr[0]
+    sigma_levels = [3, 5]
+    flux_levels = [n * sigma_ujy for n in sigma_levels]
+    cs = ax.contour(
+        LOGMP_MESH, LOGALPHA_MESH, Flux_vals,
+        levels=flux_levels, colors="brown", linestyles="dashed", linewidths=2
+    )
+    ax.clabel(cs, fmt={lvl: f"{n}σ" for lvl, n in zip(flux_levels, sigma_levels)},
+              fontsize=rcParams['font.size'] * 0.9)
+
+    ax.set_xlabel(r"$\log_{10}(M_p/M_{\rm Jup})$", fontsize=rcParams['font.size'])
+    ax.set_ylabel(r"$\log_{10}(\alpha)$", fontsize=rcParams['font.size'])
+    ax.tick_params(labelsize=rcParams['font.size'] * 0.9)
+    ax.set_yticks([-3.5 , -2.5, -1.5])
+
+    # plot the planet mass limit 
+    # So with the beam major axis , get the mass limit from the hills raidus
+    # beam major axis will be an input as arcsec
+    d_pc = disk_arr[2]        # distance in pc
+
+    # Convert beam to AU
+    beam_major_au = beam_major_arcsec * d_pc/2
+
+    # Stellar mass in Jupiter masses
+    M_star_jup = disk_arr[1] * 1047.56  # M_sun → M_jup
+
+    # Compute planet mass such that: beam = 0.3 * R_H
+    # Mp = 3 * M_star * (beam / (0.3 * rp))^3
+    Mp_limit = 3.0 * M_star_jup * (beam_major_au / (0.3 * rp))**3
+
+    logMp_limit = np.log10(Mp_limit)
+    if logMp_limit < 1.0:
+        
+        ax.axvline(logMp_limit, color='purple', linestyle='-.', linewidth=2.5, 
+               label=rf'$M_p={Mp_limit:.2f}\,M_{{\rm Jup}}$')
+        ax.legend(fontsize=rcParams['font.size']*0.8, loc='upper right')
+
+
+
+    if fig is not None:
+        plt.tight_layout()
+        plt.show()
+
+    return cf
