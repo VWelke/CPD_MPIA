@@ -379,7 +379,7 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
     M_star_jup = disk_arr[1] * 1047.56
     RHill_arr = rp * (Mp_grid / (3 * M_star_jup))**(1/3)
     Rout_frac_beam = res_au / (2 * RHill_arr)
-
+    
     # ============= detection limit contours ==================
     ax.plot(np.log10(Mp_grid), Rout_frac_beam, color='purple', linestyle='-.', lw=3, label='_nolegend_')
 
@@ -393,7 +393,7 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
     ax.set_ylabel(r"$R_{\rm cpd}/R_H$", fontsize=rcParams['font.size'])  # <--- ADDED fontsize
     from matplotlib.ticker import MaxNLocator
 
-    ax.xaxis.set_major_locator(MaxNLocator(nbins=3, prune=None))
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=3, integer=True))
     ax.yaxis.set_major_locator(MaxNLocator(nbins=3, prune=None))
     ax.set_ylim(y_min, y_max)
     ax.set_xlim(x_min, x_max)

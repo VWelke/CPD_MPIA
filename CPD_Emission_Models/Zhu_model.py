@@ -297,6 +297,9 @@ def calculate_disk_properties_zhu(M_star=1.0, Mp=1.0, Mdot=1e-6, alpha=1e-3, rp=
 # The plotting function
 # ================================================================
 
+
+from matplotlib.ticker import MaxNLocator
+
 def plot_zhu_Mp_Mdot_flux(
     Mp_grid, Mdot_grid, Flux_vals,
     disk_arr, rp, alpha,
@@ -304,7 +307,7 @@ def plot_zhu_Mp_Mdot_flux(
     ax=None,
     beam_major_arcsec=0.1,
     plot_thick_thin =True,
-    plot_Q = True 
+    plot_Q = True,
 ):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -329,6 +332,7 @@ def plot_zhu_Mp_Mdot_flux(
     ax.set_aspect('auto')  # <-- ADD THIS
 
     # 3. Main contourf
+    # cmap="YlGnBu",
     cf = ax.contourf(
         LOGMP, LOGMDOT, logFlux,
         levels=6,
@@ -395,8 +399,8 @@ def plot_zhu_Mp_Mdot_flux(
         fontsize=rcParams['font.size']  # <-- USE rcParams
     )
 
-    ax.set_xticks([-2, -1, 0,1])
-    ax.set_yticks([-7.5 , -6.5, -5.5])
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=5, integer = True))
+    ax.set_yticks([-8, -7, -6, -5])
 
 
     # plot the planet mass limit 
@@ -568,8 +572,8 @@ def compute_flux_map_zhu_MpAlpha(
     Mdot=None,
     rp=165,
     lam_mm=0.9,
-    Mp_min=-2, Mp_max=1, n_Mp=40,
-    alpha_min=-4, alpha_max=-1, n_alpha=30,
+    Mp_min=-2, Mp_max=1, n_Mp=80,
+    alpha_min=-4, alpha_max=-1, n_alpha=80,
     verbose=True
 ):
     """
@@ -612,6 +616,8 @@ def compute_flux_map_zhu_MpAlpha(
                 print(f"Mp={Mp:.3f}, alpha={alpha:.2e}, Flux={out['F_nu_tot']:.3f}")
 
     return Mp_grid, alpha_grid, Flux_map
+
+from matplotlib.ticker import MultipleLocator
 
 def plot_zhu_Mp_alpha_flux(
     Mp_grid, alpha_grid, Flux_vals,
@@ -658,7 +664,8 @@ def plot_zhu_Mp_alpha_flux(
     ax.set_xlabel(r"$\log_{10}(M_p/M_{\rm Jup})$", fontsize=rcParams['font.size'])
     ax.set_ylabel(r"$\log_{10}(\alpha)$", fontsize=rcParams['font.size'])
     ax.tick_params(labelsize=rcParams['font.size'] * 0.9)
-    ax.set_yticks([-3.5 , -2.5, -1.5])
+    ax.set_yticks([-4 , -3, -2,-1])
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=5, integer = True))
 
     # plot the planet mass limit 
     # So with the beam major axis , get the mass limit from the hills raidus
@@ -676,6 +683,7 @@ def plot_zhu_Mp_alpha_flux(
     Mp_limit = 3.0 * M_star_jup * (beam_major_au / (0.3 * rp))**3
 
     logMp_limit = np.log10(Mp_limit)
+    print( "logMp_limit =", logMp_limit, "xlim =", ax.get_xlim())
     if logMp_limit < 1.0:
         
         ax.axvline(logMp_limit, color='purple', linestyle='-.', linewidth=2.5, 
