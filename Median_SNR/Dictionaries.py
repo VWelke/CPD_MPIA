@@ -45,13 +45,13 @@ five_sigma_sources = [
 # ----------------------------------
 
 kink_sources = [
-    # Format: [disk_name, radius_au, sigma_flux]
-    ["AA_Tau", 80, 136.85],
-    ["SY_Cha", 140, 57.23],
-    ["J1842", 105, 35.29],
-    ["J1615", 310, 24.56],
-    ["LkCa_15", 240, 20.14],
-    ["HD_143006", 32, 896.96],
+    # Format: [disk_name, radius_au, sigma_flux, planet_mass_Mjup]
+    ["AA_Tau",     80, 136.85, 2],
+    ["SY_Cha",    140,  57.23, 2],
+    ["J1842",     105,  35.29, 1],
+    ["J1615",     310,  24.56, 5],
+    ["LkCa_15",   240,  20.14, 5],
+    ["HD_143006",  32, 896.96, [3, 10]],  # two candidate masses
 ]
 
 
