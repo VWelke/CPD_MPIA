@@ -419,7 +419,7 @@ def plot_zhu_Mp_Mdot_flux(
     Mp_limit = 3.0 * M_star_jup * (beam_major_au / (0.3 * rp))**3
 
     logMp_limit = np.log10(Mp_limit)
-    if logMp_limit < 1.0:
+    if logMp_limit < np.max(logMp):
         
         ax.axvline(logMp_limit, color='purple', linestyle='-.', linewidth=2.5, 
                label=rf'$M_p={Mp_limit:.2f}\,M_{{\rm Jup}}$')
@@ -508,7 +508,7 @@ def compute_flux_map_zhu_MpMdot(
     rp=165,
     lam_mm=0.9,
     alpha=1e-3,
-    Mp_min=-2, Mp_max=1, n_Mp=40,
+    Mp_min=-2, Mp_max=2, n_Mp=40,
     Mdot_min=-9, Mdot_max=-4, n_Mdot=40,
     verbose=True
     
@@ -684,7 +684,7 @@ def plot_zhu_Mp_alpha_flux(
 
     logMp_limit = np.log10(Mp_limit)
     print( "logMp_limit =", logMp_limit, "xlim =", ax.get_xlim())
-    if logMp_limit < 1.0:
+    if logMp_limit < np.max(LOGMP):
         
         ax.axvline(logMp_limit, color='purple', linestyle='-.', linewidth=2.5, 
                label=rf'$M_p={Mp_limit:.2f}\,M_{{\rm Jup}}$')
