@@ -400,7 +400,7 @@ def plot_zhu_Mp_Mdot_flux(
     )
 
     ax.xaxis.set_major_locator(MaxNLocator(nbins=5, integer = True))
-    ax.set_yticks([-8, -7, -6, -5])
+    #ax.set_yticks([-8, -7, -6, -5])
 
 
     # plot the planet mass limit 
@@ -664,7 +664,7 @@ def plot_zhu_Mp_alpha_flux(
     ax.set_xlabel(r"$\log_{10}(M_p/M_{\rm Jup})$", fontsize=rcParams['font.size'])
     ax.set_ylabel(r"$\log_{10}(\alpha)$", fontsize=rcParams['font.size'])
     ax.tick_params(labelsize=rcParams['font.size'] * 0.9)
-    ax.set_yticks([-4 , -3, -2,-1])
+    #ax.set_yticks([-4 , -3, -2,-1])
     ax.xaxis.set_major_locator(MaxNLocator(nbins=5, integer = True))
 
     # plot the planet mass limit 
