@@ -393,8 +393,8 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
     ax.set_ylabel(r"$R_{\rm cpd}/R_H$", fontsize=rcParams['font.size'])  # <--- ADDED fontsize
     from matplotlib.ticker import MaxNLocator
 
-    ax.xaxis.set_major_locator(MaxNLocator(nbins=3, integer=True))
-    ax.yaxis.set_major_locator(MaxNLocator(nbins=3, prune=None))
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=4))
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=4))
     ax.set_ylim(y_min, y_max)
     ax.set_xlim(x_min, x_max)
     ax.tick_params(labelsize=rcParams['font.size']*0.9)  # <--- ADDED for tick label size
