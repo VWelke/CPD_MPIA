@@ -2,7 +2,7 @@ import os, sys, time
 import numpy as np
 
 import sys, os
-sys.path.append(os.getcwd())
+sys.path.append('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/')
 
 execfile('JvM_correction_brief.py', globals())
 execfile('ImportMS.py', globals())
@@ -30,7 +30,7 @@ os.system('rm -rf '+target+'_data.'+resid_suffix+'.ms*')
 #         make_resid=False)
 
 
-ImportMS('/mnt/d/exoALMA_disk_data/measurement_set_spavg/' +target+'_time_ave_continuum_spavg.ms', rfile, suffix=resid_suffix,make_resid=False)
+ImportMS('/nexus/posix0/MIA-astro-env/myben/vawelke/exoALMA_disk_data/measurement_set_spavg/' +target+'_time_ave_continuum_spavg.ms', rfile, suffix=resid_suffix,make_resid=False)
 #--------------------------------------------
 # D:\exoALMA_disk_data\measurement_set_spavg\AA_Tau_time_ave_continuum_spavg.ms
 
@@ -42,7 +42,7 @@ for ext in ['.image', '.mask', '.model', '.pb', '.psf', '.residual', '.sumwt']:
 
 #---------------- Modified here-----------------
 # vis, 
-tclean(vis='/mnt/d/exoALMA_disk_data/measurement_set_spavg/'+target+'_time_ave_continuum_spavg.'+resid_suffix+'.ms', imagename=im_outfile,
+tclean(vis='/nexus/posix0/MIA-astro-env/myben/vawelke/exoALMA_disk_data/measurement_set_spavg/'+target+'_time_ave_continuum_spavg.'+resid_suffix+'.ms', imagename=im_outfile,
        specmode='mfs', deconvolver='multiscale', imsize=1024, cell='.006arcsec',
        scales=disk.disk[target]['cscale'], mask=disk.disk[target]['cmask'], 
        gain=0.3, cycleniter=300, cyclefactor=1, nterms=1, niter=50000,

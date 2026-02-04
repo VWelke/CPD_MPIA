@@ -91,3 +91,12 @@ for i in range(len(F_cpd)):
                      r_cpd[j], az_cpd[j]))
 
 print(time.time() - t0)
+
+
+# ---- move the created mpars file into injections/ after the loop ----
+os.makedirs("injections", exist_ok=True)
+
+mpars_name = f"{target}_gap{gap_ix}_mpars.{subsuf}.txt"
+dst = os.path.join("injections", mpars_name)
+
+os.replace(mpars_name, dst)

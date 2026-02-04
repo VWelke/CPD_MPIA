@@ -13,15 +13,12 @@ cd /nexus/posix0/MIA-astro-env/myben/vawelke
 
 
 
-cd /nexus/posix0/MIA-astro-env/myben/vawelke/J1852_gap0
+cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/
 
 python J1852_1core_injectloop.py
 
 
-# (Move the .txt to injection folder)
 
-mkdir -p injections
-mv J1852_gap0_mpars.0.txt injections/
 
 
 
