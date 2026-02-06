@@ -21,7 +21,9 @@ export CASA_CONFIG=/nexus/posix0/MIA-astro-env/myben/vawelke/casa_config.py
 
 cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0_trial1/
 
+source /nexus/posix0/MIA-astro-env/myben/vawelke/venvs/frank_env/bin/activate
 python -u J1852_gap0_injectloop.py
+deactivate
 
 echo "Injection completed."
 

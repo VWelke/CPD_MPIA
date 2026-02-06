@@ -15,7 +15,7 @@ import diskdictionaryr2_0 as disk
 os.makedirs('resid_images', exist_ok=True)
 
 # specify target disk and gap
-target, gap_ix, subsuf = "J1852", "0", "0"
+target, gap_ix, subsuf = "AA_Tau", "0", "0"
 
 
 
