@@ -12,7 +12,7 @@ import diskdictionaryr2_0 as disk
 
 # specify target disk and gap
 target = 'AA_Tau'	# CSD name
-gap_ix = 0		# which gap CPD is in (based on dict list)
+gap_ix = 1		# which gap CPD is in (based on dict list)
 subsuf = '0'		# suffix to attach to records (if partial work)
 
 

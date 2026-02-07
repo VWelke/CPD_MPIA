@@ -8,7 +8,7 @@ import diskdictionaryr2_0 as disk
 
 # target disk/gap; iteration
 target = 'AA_Tau'
-gap = 1
+gap = 2
 ix = '0'
 
 
