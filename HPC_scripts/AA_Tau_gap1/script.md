@@ -49,4 +49,33 @@ nohup casa --pipeline --configfile $CASA_CONFIG --nogui --nologger --nologfile -
 deactivate
 
 tail -f imageloop.log
+
+# Recovery
+
+cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/AA_Tau_gap0/
+mkdir -p recoveries
+
+
+source /nexus/posix0/MIA-astro-env/myben/vawelke/venvs/frank_env/bin/activate
+
+nohup python -u recover_loop.py > recover_loop.log 2>&1 & disown
+
+
+
+deactivate
+
+
+
+# Output and assess recovery
+
+# move the last 2 residual fits in recoveries folder
+cd resid_img
+
+cp $(ls -1t *.fits | head -n 2) ../recoveries/
+
+rsync -av --progress \
+astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0_trial1/recoveries/ \
+/mnt/d/CPD_MPIA/HPC_scripts/J1852_gap0/recoveries/
+
+
 ````
