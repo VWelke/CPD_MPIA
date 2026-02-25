@@ -28,7 +28,7 @@ for i in range(len(Fstr)):
     # load the residual image, header
     im_file = target + '_gap' + str(gap) + '.F' + Fstr[i] + 'uJy_' + mstr[i]
     # /nexus/posix0/MIA-astro-env/myben/vawelke/J1852_gap0/resid_images/
-    hdu = fits.open(f'/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/{target}_gap{gap}/resid_images/' + im_file + '.resid.JvMcorr.fits')
+    hdu = fits.open('/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/resid_images/' + im_file + '.resid.JvMcorr.fits')
     img = 1e6 * np.squeeze(hdu[0].data)    # in microJy/beam
     hd = hdu[0].header
     hdu.close()

@@ -19,7 +19,7 @@ subsuf = '0'		# suffix to attach to records (if partial work)
 # specify mock parameters
 #F_cpd = np.arange(0.25, 0.00, -0.01)        # in mJy
 F_cpd = np.arange(2*disk.disk[target]['RMS']/1000, 13*disk.disk[target]['RMS']/1000, 1*disk.disk[target]['RMS']/1000)        # in mJy
-n_mocks_per_F = 50 			    # number of mocks per flux bin
+n_mocks_per_F = 100 			    # number of mocks per flux bin
 
 
 # -------

@@ -18,15 +18,12 @@ f = open('whichdisk.txt', 'w')
 f.write(target + '\n' + gap_ix + '\n' + subsuf)
 f.close()
 
-from custom_mask import custom_mask
-
-import diskdictionaryr2_0 as disk
 # preliminary CASA imaging to set up for image loop
-os.system('casa --pipeline --configfile $CASA_CONFIG --nogui --nologger --nologfile --noconfirm < prepimaging_casa.py')
+os.system('casa --pipeline --configfile $CASA_CONFIG --nogui --nologger --nologfile -c ../Source_codes/prepimaging_casa.py')
 
 # make a custom mask for the gap of interest
 custom_mask(target, int(gap_ix), target+'_gap'+gap_ix+'.'+subsuf,
             buffer_factor=1.5)
 
 # make a script to convert custom mask into CASA format
-os.system('casa --pipeline --configfile $CASA_CONFIG --nogui --nologger --nologfile --noconfirm < mask_to_casa.py')
+os.system('casa --pipeline --configfile $CASA_CONFIG --nogui --nologger --nologfile -c ../Source_codes/mask_to_casa.py')

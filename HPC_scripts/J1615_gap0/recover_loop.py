@@ -7,7 +7,7 @@ sys.path.append('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/')
 import diskdictionaryr2_0 as disk
 
 # target disk/gap; iteration
-target = 'J1852'
+target = 'J1615'
 gap = 0
 ix = '0'
 

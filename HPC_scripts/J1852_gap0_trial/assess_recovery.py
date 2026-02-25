@@ -9,7 +9,7 @@ from scipy.special import erfc # to calculate false positive , What's the chance
 import diskdictionaryr2_0 as disk
 
 # target disk/gap; iteration
-target, gap_ix, subsuf = 'AA_Tau', '1', '0'
+target, gap_ix, subsuf = 'J1852', '0', '0'
 
 # decisions!  How many pixels tolerated?  How many x astrometry RMS?
 npix_tol = 2
@@ -36,7 +36,7 @@ yi = ri * np.sin(azir) * np.cos(PAr) - \
 d_ir = np.sqrt((xi - xr)**2 + (yi - yr)**2)
 
 # load beam parameters from residual image header
-imdir = f'/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/{target}_gap{gap_ix}/resid_images/'
+imdir = '/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/resid_images/'
 imfile = imdir+target+'_gap'+gap_ix+'.F'+str(int(Fi[0]))+'uJy'+ \
          '_0000.resid.JvMcorr.fits'
 rim, hd = np.squeeze(fits.open(imfile)[0].data), fits.open(imfile)[0].header

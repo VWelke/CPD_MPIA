@@ -11,7 +11,7 @@ import diskdictionaryr2_0 as disk
 
 
 # specify target disk and gap
-target = 'J1852'	# CSD name
+target = 'J1615'	# CSD name
 gap_ix = 0		# which gap CPD is in (based on dict list)
 subsuf = '0'		# suffix to attach to records (if partial work)
 

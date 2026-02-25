@@ -8,7 +8,7 @@ disk = {
             'RMS': np.float64(23.725058781565167),
             'ccycleniter': 300,
             'cgain': 0.3,
-            'cmask': 'ellipse[[04:34:55.420, +24:28:53.034], [2arcsec, '
+            'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                      '1.0439459414332437arcsec], 93.77079777deg]',
             'crobust': 2.0,
             'cscale': [0, 8, 15, 30, 80],
@@ -35,7 +35,7 @@ disk = {
                 'RMS': np.float64(25.65815157140605),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[05:35:58.467, +24:44:54.091], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.633432101799876arcsec], 53.87180444deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -61,7 +61,7 @@ disk = {
                 'RMS': np.float64(21.415021365100984),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[04:33:48.733, +18:10:09.973], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.6187017651640194arcsec], 155.59975598deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -88,7 +88,7 @@ disk = {
                         'RMS': np.float64(19.780339243880007),
                         'ccycleniter': 300,
                         'cgain': 0.3,
-                        'cmask': 'ellipse[[15:15:48.446, -37:09:16.024], [2arcsec, '
+                        'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                                 '1.8704829781176846arcsec], 28.92070668deg]',
                         'crobust': 2.0,
                         'cscale': [0, 8, 15, 30, 80],
@@ -115,7 +115,7 @@ disk = {
                 'RMS': np.float64(20.46369445452001),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[15:58:36.913, -22:57:15.221], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                                 '1.8944886188220467arcsec], 7.53236754deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -142,7 +142,7 @@ disk = {
                 'RMS': np.float64(21.297418243193533),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[05:16:00.477, -09:48:35.394], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.005527473149872arcsec], 117.79519232deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -169,7 +169,7 @@ disk = {
                 'RMS': np.float64(22.730672753823455),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[16:04:21.642, -21:30:29.058], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.9768678096037415arcsec], 123.24221853deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -195,7 +195,7 @@ disk = {
                 'RMS': np.float64(17.710814063320868),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[16:15:20.234, -32:55:05.099], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.3614990911539273arcsec], 146.14327945deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -222,7 +222,7 @@ disk = {
                 'RMS': np.float64(19.370352674741298),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[18:42:57.981, -35:32:42.827], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.549481012108344arcsec], 26.35016474deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -249,7 +249,7 @@ disk = {
                 'RMS': np.float64(16.89891632850049),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[18:52:17.301, -37:00:11.949], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.6868119485868183arcsec], 117.61494041deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -276,7 +276,7 @@ disk = {
                 'RMS': np.float64(19.101446014246903),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[04:39:17.791, +22:21:03.390], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.2695975167543332arcsec], 61.57232522deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -303,7 +303,7 @@ disk = {
                 'RMS': np.float64(25.907760573318228),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[05:30:27.529, +25:19:57.076], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.9839420811003194arcsec], 76.17365568deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -330,7 +330,7 @@ disk = {
                 'RMS': np.float64(25.129824280156754),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[13:22:07.542, -69:38:12.219], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.6957384414086927arcsec], 8.91316735deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -356,7 +356,7 @@ disk = {
                 'RMS': np.float64(26.288028493581805),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[10:56:30.388, -77:11:39.402], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                         '1.2410252268065851arcsec], 165.76511321deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],
@@ -383,7 +383,7 @@ disk = {
                 'RMS': np.float64(20.42987762251869),
                 'ccycleniter': 300,
                 'cgain': 0.3,
-                'cmask': 'ellipse[[18:14:10.482, -32:47:34.517], [2arcsec, '
+                'cmask': 'ellipse[[512pix,512pix], [2arcsec, '
                                 '1.6704810703258652arcsec], 76.02083693deg]',
                 'crobust': 2.0,
                 'cscale': [0, 8, 15, 30, 80],

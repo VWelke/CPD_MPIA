@@ -1,34 +1,35 @@
 
 ```python
 # move stuff in
+##### CHANGE  DISK_dictionary first!!!!
 
 rsync -av --progress \
-  /mnt/d/CPD_MPIA/HPC_scripts/AA_Tau_gap2/ \
-  astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/AA_Tau_gap2/
+  /mnt/d/CPD_MPIA/HPC_scripts/J1852_gap0/ \
+  astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/
 
   rsync -av --progress \
   /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionaryr2_0.py \
   astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionaryr2_0.py
 
 # Mkdir residual and 
-cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/AA_Tau_gap2/
+cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/
 
 mkdir -p resid_vis mprofiles
 
 source /nexus/posix0/MIA-astro-env/myben/vawelke/venvs/frank_env/bin/activate
 
-nohup python -u AA_Tau_gap2_injectloop.py > inject.log 2>&1 & disown
+nohup python -u J1852_gap0_injectloop.py > inject.log 2>&1 & disown
 
 
 deactivate
 
-pgrep -af AA_Tau_gap2_injectloop.py
+pgrep -af J1852_gap0_injectloop.py
 tail -f inject.log
 
 
 # Prepimaging
 # RMB change cmask to [512pix,512pix]
-cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/AA_Tau_gap2/
+cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/
 
 source /nexus/posix0/MIA-astro-env/myben/vawelke/venvs/frank_env/bin/activate
 
@@ -52,7 +53,7 @@ export PATH="/nexus/posix0/MIA-astro-env/myben/vawelke/software/casa-6.6.6-17-pi
 
 export CASA_CONFIG=/nexus/posix0/MIA-astro-env/myben/vawelke/casa_config.py
 
-nohup casa --pipeline --configfile $CASA_CONFIG --nogui --nologger --nologfile -c "execfile('AA_Tau_robust2_0_gap2_imageloop.py')" > imageloop.log 2>&1 & disown
+nohup casa --pipeline --configfile $CASA_CONFIG --nogui --nologger --nologfile -c "execfile('J1852_robust2_0_gap0_imageloop.py')" > imageloop.log 2>&1 & disown
 
 deactivate
 
@@ -60,7 +61,7 @@ tail -f imageloop.log
 
 # Recovery
 
-cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/AA_Tau_gap2/
+cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/
 mkdir -p recoveries
 
 
@@ -82,8 +83,8 @@ cd resid_images
 cp $(ls -1t *.fits | head -n 2) ../recoveries/
 
 rsync -av --progress \
-astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/AA_Tau_gap2_trial1/recoveries/ \
-/mnt/d/CPD_MPIA/HPC_scripts/AA_Tau_gap2/recoveries/
+astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/recoveries/ \
+/mnt/d/CPD_MPIA/HPC_scripts/J1852_gap0/recoveries/
 
 
 ````
