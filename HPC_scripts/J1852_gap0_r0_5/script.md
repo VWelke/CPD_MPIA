@@ -15,6 +15,13 @@ astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/
   /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionaryr2_0_pix.py \
   astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionaryr2_0.py
 
+  rsync -av --progress \
+  /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionaryr0_5_pix.py \
+  astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionaryr0_5_pix.py
+
+rsync -av --progress \
+  /mnt/d/CPD_MPIA/HPC_scripts/J1852_gap0_r0_5/ \
+  astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0_r0_5/
 
 
 rsync -av --progress \
@@ -74,7 +81,7 @@ export CASA_CONFIG=/nexus/posix0/MIA-astro-env/myben/vawelke/casa_config.py
 
 CASA_NUM_THREADS=2 OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
 nohup casa --pipeline --configfile "$CASA_CONFIG" --nogui --nologger --nologfile \
-  -c  SY_Cha_robust2_0_gap0_imageloop.py > imageloop.log 2>&1 & disown
+  -c  DM_Tau_robust2_0_gap0_imageloop.py > imageloop.log 2>&1 & disown
 
 tail -f imageloop.log
 

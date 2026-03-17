@@ -15,7 +15,7 @@ import diskdictionaryr2_0 as disk
 os.makedirs('resid_images', exist_ok=True)
 
 # specify target disk and gap
-target, gap_ix, subsuf = "J1852", "0", "0"
+target, gap_ix, subsuf = "V4046_Sgr", "0", "0"
 
 
 
@@ -68,11 +68,11 @@ for i in range(len(Fstr)):
        calcpsf=False)
 
     # perform the JvM correction
-    #eps = do_JvM_correction_and_get_epsilon(im_outfile)
+    eps = do_JvM_correction_and_get_epsilon(im_outfile)
 
     # export the resulting images to FITS files
-    #exportfits(im_outfile+'.JvMcorr.image', 
-    #           'resid_images/'+im_outfile+'.JvMcorr.fits', overwrite=True)
+    exportfits(im_outfile+'.JvMcorr.image', 
+               'resid_images/'+im_outfile+'.JvMcorr.fits', overwrite=True)
     exportfits(im_outfile+'.image', 'resid_images/'+im_outfile+'.fits',
                overwrite=True)
                

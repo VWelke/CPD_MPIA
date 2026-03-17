@@ -9,7 +9,7 @@ exec(compile(open('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/JvM_co
 exec(compile(open('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/ImportMS.py', "rb").read(), 'ImportMS.py', 'exec')) 
 
 
-import diskdictionaryr2_0 as disk
+import diskdictionaryr0_5_pix as disk
 
 # Create output directory for residual images
 os.makedirs('resid_images', exist_ok=True)
@@ -68,11 +68,11 @@ for i in range(len(Fstr)):
        calcpsf=False)
 
     # perform the JvM correction
-    #eps = do_JvM_correction_and_get_epsilon(im_outfile)
+    eps = do_JvM_correction_and_get_epsilon(im_outfile)
 
     # export the resulting images to FITS files
-    #exportfits(im_outfile+'.JvMcorr.image', 
-    #           'resid_images/'+im_outfile+'.JvMcorr.fits', overwrite=True)
+    exportfits(im_outfile+'.JvMcorr.image', 
+               'resid_images/'+im_outfile+'.JvMcorr.fits', overwrite=True)
     exportfits(im_outfile+'.image', 'resid_images/'+im_outfile+'.fits',
                overwrite=True)
                
