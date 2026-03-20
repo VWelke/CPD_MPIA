@@ -15,6 +15,13 @@ astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/
   /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionaryr2_0_pix.py \
   astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionaryr2_0.py
 
+  rsync -av --progress \
+  /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionaryr0_5_pix.py \
+  astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionaryr0_5_pix.py
+
+rsync -av --progress \
+  /mnt/d/CPD_MPIA/HPC_scripts/J1852_gap0_r0_5/ \
+  astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0_r0_5/
 
 
 rsync -av --progress \
@@ -23,14 +30,9 @@ rsync -av --progress \
 /mnt/d/CPD_MPIA/HPC_scripts/J1615_gap2 \
 astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/
 
-
-rsync -av --progress \
-/mnt/d/CPD_MPIA/HPC_scripts/Trial_rval/* \
-astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/
-
   rsync -av --progress \
-  /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionary/* \
-  astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/
+  /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionaryr2_0.py \
+  astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionaryr2_0.py
 
 # Mkdir residual and 
 cd /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0/
@@ -40,15 +42,13 @@ mkdir -p resid_vis mprofiles
 source /nexus/posix0/MIA-astro-env/myben/vawelke/venvs/frank_env/bin/activate
 
 OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
-nohup python -u J1852_gap0_injectloop.py > inject.log 2>&1 & disown
+nohup python -u SY_Cha_gap0_injectloop.py > inject.log 2>&1 & disown
 
 
 deactivate
 
 pgrep -af J1852_gap0_injectloop.py
 tail -f inject.log
-
-"ValueError: Bad value in power spectrum. The power spectrum must be positive and not contain any NaN values. This is likely due to your UVtable (incorrect units or weights),  or the deprojection being applied (incorrect geometry and/or phase center). Else you may want to adjust `rout` (ensure it is larger than the source) or `n` (up to ~300)." 
 
 
 # Prepimaging
@@ -81,7 +81,7 @@ export CASA_CONFIG=/nexus/posix0/MIA-astro-env/myben/vawelke/casa_config.py
 
 CASA_NUM_THREADS=2 OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
 nohup casa --pipeline --configfile "$CASA_CONFIG" --nogui --nologger --nologfile \
-  -c  J1852_robust2_0_gap0_imageloop.py > imageloop.log 2>&1 & disown
+  -c  DM_Tau_robust2_0_gap0_imageloop.py > imageloop.log 2>&1 & disown
 
 tail -f imageloop.log
 
@@ -139,11 +139,3 @@ astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/
 
 
 HD_34282_gap0 HD_34282_gap1 HD_34282_gap2 HD_34282_gap3  LkCa_15_gap0 LkCa_15_gap1
-
-
-0.5 1.5  2.0  m1_5
-
-
-rsync -av --progress \
-astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0_rm1_5/recoveries/ \
-/mnt/d/CPD_MPIA/HPC_scripts/Trial_rval/J1852_gap0_rm1_5/recoveries/
