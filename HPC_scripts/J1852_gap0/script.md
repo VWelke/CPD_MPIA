@@ -29,7 +29,7 @@ rsync -av --progress \
 astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/
 
   rsync -av --progress \
-  /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionary/* \
+  /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionary_r90/* \
   astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/
 
 # Mkdir residual and 
@@ -147,3 +147,17 @@ HD_34282_gap0 HD_34282_gap1 HD_34282_gap2 HD_34282_gap3  LkCa_15_gap0 LkCa_15_ga
 rsync -av --progress \
 astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0_rm1_5/recoveries/ \
 /mnt/d/CPD_MPIA/HPC_scripts/Trial_rval/J1852_gap0_rm1_5/recoveries/
+
+
+check my disk ditionaries first
+note: lazy just do 0.0 1.0 , m0_5
+
+
+
+------------------------------------------------------------------------
+With bash
+
+bash run_j1852_gap0.sh
+
+# run bash in bg, and run scipts in foreground
+nohup bash J1852_r0_5.sh > pipeline.log 2>&1 & disown 

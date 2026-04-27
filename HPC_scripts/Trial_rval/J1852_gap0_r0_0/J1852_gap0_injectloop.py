@@ -31,7 +31,10 @@ offRA, offDEC = disk.disk[target]['dx'], disk.disk[target]['dy']
 geom = FixedGeometry(incl, PA, dRA=offRA, dDec=offDEC)
 
 # frank setup
-Rmax, Ncoll = 2 * disk.disk[target]['rout'], disk.disk[target]['hyp-Ncoll']
+if disk.disk[target]['rout'] > disk.disk[target]['rgap'][gap_ix]:
+    Rmax, Ncoll = 2 * disk.disk[target]['rout'], disk.disk[target]['hyp-Ncoll']
+else:
+    Rmax, Ncoll = 2 * disk.disk[target]['R90'], disk.disk[target]['hyp-Ncoll']
 alpha, wsmth = disk.disk[target]['hyp-alpha'], disk.disk[target]['hyp-wsmth']
 FF = FrankFitter(Rmax=Rmax, N=Ncoll, geometry=geom, alpha=alpha, 
                  weights_smooth=wsmth)
