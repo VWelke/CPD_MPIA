@@ -45,9 +45,9 @@ for i in range(len(Fstr)):
        threshold=disk.disk[target]['gthresh'], interactive=False,
        calcpsf=False)
 
-    eps = do_JvM_correction_and_get_epsilon(im_outfile)
+    #eps = do_JvM_correction_and_get_epsilon(im_outfile)
 
-    exportfits(im_outfile+'.JvMcorr.image', 'resid_images/'+im_outfile+'.JvMcorr.fits', overwrite=True)
+    #exportfits(im_outfile+'.JvMcorr.image', 'resid_images/'+im_outfile+'.JvMcorr.fits', overwrite=True)
     exportfits(im_outfile+'.image', 'resid_images/'+im_outfile+'.fits', overwrite=True)
 
     for ext in ['.image', '.mask', '.model', '.pb', '.psf', '.residual', '.sumwt', '.JvMcorr.image']:

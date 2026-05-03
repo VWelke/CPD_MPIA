@@ -39,7 +39,7 @@ d_ir = np.sqrt((xi - xr)**2 + (yi - yr)**2)
 # load beam parameters from residual image header
 imdir = f'/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/r0_5/{target}_gap{gap_ix}/resid_images/'
 imfile = imdir+target+'_gap'+gap_ix+'.F'+str(int(Fi[0]))+'uJy'+ \
-         '_0000.resid.JvMcorr.fits'
+         '_0000.resid.fits'
 rim, hd = np.squeeze(fits.open(imfile)[0].data), fits.open(imfile)[0].header
 beam_fwhm = np.sqrt(3600**2 * hd['BMAJ'] * hd['BMIN'])
 beam_area = 3600**2 * np.pi * hd['BMAJ'] * hd['BMIN'] / (4 * np.log(2))

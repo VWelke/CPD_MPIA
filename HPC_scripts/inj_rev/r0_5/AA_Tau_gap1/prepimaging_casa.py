@@ -36,7 +36,7 @@ tclean(vis='/nexus/posix0/MIA-astro-env/myben/vawelke/exoALMA_disk_data/measurem
        uvtaper=[], savemodel='none',
        threshold=disk.disk[target]['cthresh'], interactive=False)
 
-eps = do_JvM_correction_and_get_epsilon(im_outfile)
+#eps = do_JvM_correction_and_get_epsilon(im_outfile)
 
 exportfits(im_outfile+'.mask',
            target+'_gap'+gap_ix+'.'+subsuf+'.mask.fits', overwrite=True)
