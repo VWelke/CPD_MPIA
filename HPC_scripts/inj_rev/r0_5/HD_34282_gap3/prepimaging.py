@@ -9,7 +9,7 @@ from custom_mask import custom_mask
 sys.path.append('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionary_r90/')
 import diskdictionaryr0_5 as disk
 
-target, gap_ix, subsuf = 'HD_34282', '1', '0'
+target, gap_ix, subsuf = 'HD_34282', '3', '0'
 
 f = open('whichdisk.txt', 'w')
 f.write(target + '\n' + gap_ix + '\n' + subsuf)

@@ -63,18 +63,14 @@ for i in range(len(Fstr)):
        threshold=disk.disk[target]['gthresh'], interactive=False,
        calcpsf=False)
 
-    # perform the JvM correction
-    eps = do_JvM_correction_and_get_epsilon(im_outfile)
+    #eps = do_JvM_correction_and_get_epsilon(im_outfile)
 
-    # export the resulting images to FITS files
-    exportfits(im_outfile+'.JvMcorr.image',
-               'resid_images/'+im_outfile+'.JvMcorr.fits', overwrite=True)
     exportfits(im_outfile+'.image', 'resid_images/'+im_outfile+'.fits',
                overwrite=True)
 
     # clean up
     for ext in ['.image', '.mask', '.model', '.pb', '.psf', '.residual',
-                '.sumwt', '.JvMcorr.image']:
+                '.sumwt']:
         os.system('rm -rf '+im_outfile+ext)
     os.system('rm -rf /nexus/posix0/MIA-astro-env/myben/vawelke/exoALMA_disk_data/measurement_set_spavg/'+target+'_time_ave_continuum_spavg.'+resid_suffix+'.ms*')
 

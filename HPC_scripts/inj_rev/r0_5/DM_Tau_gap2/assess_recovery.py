@@ -9,7 +9,7 @@ from scipy.special import erfc
 sys.path.append('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionary_r90/')
 import diskdictionaryr0_5 as disk
 
-target, gap_ix, subsuf = 'DM_Tau', '1', '0'
+target, gap_ix, subsuf = 'DM_Tau', '2', '0'
 
 npix_tol = 2
 ast_tol = 2

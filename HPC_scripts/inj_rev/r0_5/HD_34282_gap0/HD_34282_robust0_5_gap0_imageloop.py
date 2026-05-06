@@ -13,7 +13,7 @@ import diskdictionaryr0_5 as disk
 
 os.makedirs('resid_images', exist_ok=True)
 
-target, gap_ix, subsuf = "HD_34282", "1", "0"
+target, gap_ix, subsuf = "HD_34282", "0", "0"
 
 inj_file = 'injections/'+target+'_gap'+gap_ix+'_mpars.'+subsuf+'.txt'
 print(f"Loading: {inj_file}")

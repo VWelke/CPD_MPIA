@@ -40,8 +40,7 @@ tclean(vis='/nexus/posix0/MIA-astro-env/myben/vawelke/exoALMA_disk_data/measurem
        uvtaper=[], savemodel='none',
        threshold=disk.disk[target]['cthresh'], interactive=False)
 
-# perform the JvM correction
-eps = do_JvM_correction_and_get_epsilon(im_outfile)
+#eps = do_JvM_correction_and_get_epsilon(im_outfile)
 
 # export the mask to a FITS file
 exportfits(im_outfile+'.mask',

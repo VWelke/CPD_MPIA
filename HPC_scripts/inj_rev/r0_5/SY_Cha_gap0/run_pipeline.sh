@@ -11,10 +11,14 @@ mkdir -p resid_vis mprofiles recoveries resid_images
 source "$VENV"
 export PATH="${CASA_BIN}:$PATH"
 
-echo "=== [SY_Cha gap0] Inject start: $(date) ==="
-OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
-python -u SY_Cha_gap0_injectloop.py > inject.log 2>&1
-echo "=== Inject finished: $(date) ===" >> inject.log
+if [ -f "injections/SY_Cha_gap0_mpars.0.txt" ]; then
+    echo "=== [SY_Cha gap0] Inject already done, skipping ==="
+else
+    echo "=== [SY_Cha gap0] Inject start: $(date) ==="
+    OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
+    python -u SY_Cha_gap0_injectloop.py > inject.log 2>&1
+    echo "=== Inject finished: $(date) ===" >> inject.log
+fi
 
 echo "=== [SY_Cha gap0] Prepimaging start: $(date) ==="
 CASA_NUM_THREADS=2 OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \

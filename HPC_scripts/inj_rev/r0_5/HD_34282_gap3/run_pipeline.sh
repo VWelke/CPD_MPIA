@@ -11,10 +11,14 @@ mkdir -p resid_vis mprofiles recoveries resid_images
 source "$VENV"
 export PATH="${CASA_BIN}:$PATH"
 
-echo "=== [HD_34282 gap3] Inject start: $(date) ==="
-OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
-python -u HD_34282_gap3_injectloop.py > inject.log 2>&1
-echo "=== Inject finished: $(date) ===" >> inject.log
+if [ -f "injections/HD_34282_gap3_mpars.0.txt" ]; then
+    echo "=== [HD_34282 gap3] Inject already done, skipping ==="
+else
+    echo "=== [HD_34282 gap3] Inject start: $(date) ==="
+    OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
+    python -u HD_34282_gap3_injectloop.py > inject.log 2>&1
+    echo "=== Inject finished: $(date) ===" >> inject.log
+fi
 
 echo "=== [HD_34282 gap3] Prepimaging start: $(date) ==="
 CASA_NUM_THREADS=2 OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \

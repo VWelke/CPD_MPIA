@@ -27,7 +27,7 @@ for i in range(len(Fstr)):
 
     # load the residual image, header
     im_file = target + '_kink' + str(kink) + '.F' + Fstr[i] + 'uJy_' + mstr[i]
-    hdu = fits.open(f'/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/{target}_kink{kink}/resid_images/' + im_file + '.resid.JvMcorr.fits')
+    hdu = fits.open(f'/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/{target}_kink{kink}/resid_images/' + im_file + '.resid.fits')
     img = 1e6 * np.squeeze(hdu[0].data)    # in microJy/beam
     hd = hdu[0].header
     hdu.close()
