@@ -20,7 +20,7 @@ os.system('rm -rf ' + recov_file)
 for i in range(len(Fstr)):
 
     im_file = target + '_gap' + str(gap) + '.F' + Fstr[i] + 'uJy_' + mstr[i]
-    hdu = fits.open(f'/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/r0_5/{target}_gap{gap}/resid_images/' + im_file + '.resid.fits')
+    hdu = fits.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resid_images', im_file + '.resid.fits'))
     img = 1e6 * np.squeeze(hdu[0].data)
     hd = hdu[0].header
     hdu.close()

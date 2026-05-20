@@ -39,3 +39,22 @@
 | SY_Cha_gap0 | 2026-05-14 | done | Complete 2026-05-15 20:43 UTC |
 | V4046_Sgr_gap0 | | | |
 | V4046_Sgr_gap1 | | | |
+
+---
+
+## Rmax comparison runs (J1852) — in r0_5/
+
+| Dir | Started | Status | Notes |
+|---|---|---|---|
+| J1852_gap0_test_r90 | 2026-05-20 | done | 30 mocks, Rmax=2×R90; recover_loop bug fixed 2026-05-20 |
+| J1852_gap0_test_rout | 2026-05-20 | done | 30 mocks, Rmax=2×rout; recover_loop bug fixed 2026-05-20 |
+| J1852_gap0_r90 | 2026-05-20 | running | 100 mocks, Rmax=2×R90 |
+| J1852_gap0_rout | 2026-05-20 | running | 100 mocks, Rmax=2×rout |
+
+---
+
+## r0_5_rout pipeline (all disks use Rmax=2×rout)
+
+| Disk/Gap | Started | Status | Notes |
+|---|---|---|---|
+| SY_Cha_gap0 | 2026-05-20 | running | Rerun with rout Rmax; original R90 run gave fake bright source artifact |
