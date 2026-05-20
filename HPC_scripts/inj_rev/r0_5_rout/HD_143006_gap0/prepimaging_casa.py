@@ -1,0 +1,50 @@
+import os, sys, time
+import numpy as np
+
+import sys, os
+sys.path.append('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/')
+
+execfile('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/JvM_correction_brief.py', globals())
+execfile('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/ImportMS.py', globals())
+
+sys.path.append('/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionary_r90/')
+import diskdictionaryr0_5 as disk
+
+target, gap_ix, subsuf = np.loadtxt('whichdisk.txt', dtype=str)
+
+inj_file = 'injections/'+target+'_gap'+gap_ix+'_mpars.'+subsuf+'.txt'
+Fstr, mstr, rstr, azstr = np.loadtxt(inj_file, dtype=str).T
+
+t0 = time.time()
+
+rfile = 'resid_vis/' + target + '_gap' + gap_ix + '_F' + Fstr[0] + 'uJy_' + mstr[0] + '_frank_uv_resid'
+resid_suffix = 'gap'+gap_ix+'.F'+Fstr[0]+'uJy_'+mstr[0]+'.resid'
+os.system('rm -rf '+target+'_data.'+resid_suffix+'.ms*')
+
+ImportMS('/nexus/posix0/MIA-astro-env/myben/vawelke/exoALMA_disk_data/measurement_set_spavg/'+target+'_time_ave_continuum_spavg.ms', rfile, suffix=resid_suffix, make_resid=False)
+
+im_outfile = target+'_'+resid_suffix
+for ext in ['.image', '.mask', '.model', '.pb', '.psf', '.residual', '.sumwt']:
+    os.system('rm -rf '+im_outfile+ext)
+
+tclean(vis='/nexus/posix0/MIA-astro-env/myben/vawelke/exoALMA_disk_data/measurement_set_spavg/'+target+'_time_ave_continuum_spavg.'+resid_suffix+'.ms', imagename=im_outfile,
+       specmode='mfs', deconvolver='multiscale', imsize=1024, cell='.006arcsec',
+       scales=disk.disk[target]['cscale'], mask=disk.disk[target]['cmask'],
+       gain=0.3, cycleniter=300, cyclefactor=1, nterms=1, niter=50000,
+       weighting='briggs', robust=disk.disk[target]['crobust'],
+       uvtaper=[], savemodel='none',
+       threshold=disk.disk[target]['cthresh'], interactive=False)
+
+#eps = do_JvM_correction_and_get_epsilon(im_outfile)
+
+exportfits(im_outfile+'.mask', target+'_gap'+gap_ix+'.'+subsuf+'.mask.fits', overwrite=True)
+
+for ext in ['.image', '.mask', '.model', '.pb', '.residual', '.JvMcorr.image']:
+    os.system('rm -rf '+im_outfile+ext)
+os.system('rm -rf data/'+target+'_data.'+resid_suffix+'.ms*')
+os.system('rm -rf '+target+'_gap'+gap_ix+'.'+subsuf+'.psf')
+os.system('mv '+im_outfile+'.psf '+target+'_gap'+gap_ix+'.'+subsuf+'.psf')
+os.system('rm -rf '+target+'_gap'+gap_ix+'.'+subsuf+'.sumwt')
+os.system('mv '+im_outfile+'.sumwt '+target+'_gap'+gap_ix+'.'+subsuf+'.sumwt')
+
+print(time.time()-t0)
