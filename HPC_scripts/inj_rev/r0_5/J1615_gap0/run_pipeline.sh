@@ -20,10 +20,14 @@ else
     echo "=== Inject finished: $(date) ===" >> inject.log
 fi
 
-echo "=== [J1615 gap0] Prepimaging start: $(date) ==="
-CASA_NUM_THREADS=2 OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
-python -u prepimaging.py > prepimaging.log 2>&1
-echo "=== Prepimaging finished: $(date) ===" >> prepimaging.log
+if compgen -G "*.custom.mask" > /dev/null 2>&1; then
+    echo "=== Prepimaging already done, skipping ==="
+else
+    echo "=== [J1615 gap0] Prepimaging start: $(date) ==="
+    CASA_NUM_THREADS=2 OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
+    python -u prepimaging.py > prepimaging.log 2>&1
+    echo "=== Prepimaging finished: $(date) ===" >> prepimaging.log
+fi
 
 echo "=== [J1615 gap0] Imageloop start: $(date) ==="
 CASA_NUM_THREADS=2 OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 \
