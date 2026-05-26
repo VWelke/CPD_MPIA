@@ -145,8 +145,8 @@ HD_34282_gap0 HD_34282_gap1 HD_34282_gap2 HD_34282_gap3  LkCa_15_gap0 LkCa_15_ga
 
 
 rsync -av --progress \
-astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0_rm1_5/recoveries/ \
-/mnt/d/CPD_MPIA/HPC_scripts/Trial_rval/J1852_gap0_rm1_5/recoveries/
+astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/J1852_gap0_test_rout/recoveries/ \
+/mnt/d/CPD_MPIA/HPC_scripts/inj_rev/r0_5/J1852_gap0_test_rout/recoveries/
 
 
 check my disk ditionaries first
