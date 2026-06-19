@@ -82,6 +82,26 @@ Pre-computed planet mass–radius and mass–luminosity lookup tables are in `ut
 | `Injection_Recovery_trial_fBf/*assess*.ipynb` | Recovery fraction analysis |
 | `HPC_kink/` | Kink/planet signature detection trials |
 
+### Gap Definition Methods & HPC Directory Structure
+
+Three gap definition methods are used for injection-recovery, each in its own top-level directory:
+
+| Method | Directory | Dictionary | Status |
+|---|---|---|---|
+| Original DSHARP gaps | `HPC_scripts/inj_rev/r0_5/` | `diskdictionaryr0_5.py` | Done |
+| Visually redefined gaps | `HPC_scripts/inj_rev/new_gap/` | `diskdictionary_newgap.py` | In progress |
+| Eq. C1 fitted gaps | **`HPC_eqC1_gap/`** (planned) | `diskdictionary_eqC1.py` (TBD) | Not started |
+
+**`HPC_eqC1_gap/`** — planned top-level directory (sibling of `HPC_scripts/`, `HPC_kink/`):
+- One subdirectory per disk/gap (same 19 targets as `new_gap/` but final list TBD — depends on Eq. C1 fits)
+- Each disk folder contains: `injectloop.py`, `prepimaging.py`, `imageloop.py`, `recover_loop.py`, `run_pipeline.sh`
+- Scripts are identical to `new_gap/` except the dictionary import (`diskdictionary_eqC1`)
+- `diskdictionary_eqC1.py` will be filled in as Eq. C1 fits complete — **do not create this directory until gap parameters are defined**
+
+**Eq. C1 gap model** (from paper Appendix): fits brightness temperature profile  
+`T_b = T_0 * (r/0.1")^{-q} / (1 + Γ)` where `Γ = (δ_gap − 1) * exp[−(r − r_gap)² / (2σ²_gap)]`  
+Fitted parameters per disk: `r_gap`, `σ_gap`, `δ_gap` → used as `rgap`, `wgap` in injection-recovery.
+
 ## CASA Dependency
 
 Any script that imports `casatools` or `casatasks` requires a full CASA installation (NRAO's monolithic package). These scripts **cannot run** in the standard `.venv`. The HPC scripts are the primary users. `reduction_utils.py` is a CASA-only helper.
