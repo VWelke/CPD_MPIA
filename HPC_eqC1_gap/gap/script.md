@@ -3,13 +3,11 @@
 ## 1. rsync (run from Ubuntu/WSL terminal)
 
 ```bash
-HPC="astronode1"
-HPC_BASE="/nexus/posix0/MIA-astro-env/myben/vawelke"
-LOCAL_BASE="/mnt/d/CPD_MPIA"
+# push all eqC1_gap scripts to HPC
+rsync -av --progress /mnt/d/CPD_MPIA/HPC_eqC1_gap/ astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/eqC1_gap/
 
-rsync -av --progress "${LOCAL_BASE}/HPC_eqC1_gap/diskdictionary_eqC1.py" "${HPC}:${HPC_BASE}/Source_codes/diskdictionary_r90/diskdictionary_eqC1.py"
-
-rsync -av --progress --exclude='*.fits' --exclude='*.npz' --exclude='*.log' --exclude='*.txt' --exclude='resid_vis/' --exclude='mprofiles/' --exclude='recoveries/' --exclude='resid_images/' --exclude='injections/' --exclude='__pycache__/' "${LOCAL_BASE}/HPC_eqC1_gap/gap/" "${HPC}:${HPC_BASE}/inj_rev/eqC1_gap/gap/"
+# push diskdictionary_eqC1.py to Source_codes (where scripts import it from)
+rsync -av --progress /mnt/d/CPD_MPIA/HPC_eqC1_gap/diskdictionary_eqC1.py astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionary_r90/diskdictionary_eqC1.py
 ```
 
 ## 2. Launch all 7 gap pipelines (run on HPC)
