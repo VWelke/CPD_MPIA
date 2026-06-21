@@ -11,7 +11,7 @@ tree to the cluster.
 import os
 
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
-HPC_BASE    = "/nexus/posix0/MIA-astro-env/myben/vawelke/HPC_eqC1_gap"
+HPC_BASE    = "/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/eqC1_gap"
 SRC_PATH    = "/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes"
 DICT_SUBDIR = "diskdictionary_r90"   # place diskdictionary_eqC1.py here on HPC
 

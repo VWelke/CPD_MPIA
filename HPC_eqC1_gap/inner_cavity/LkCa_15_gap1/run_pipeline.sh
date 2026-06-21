@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKDIR="/nexus/posix0/MIA-astro-env/myben/vawelke/HPC_eqC1_gap/inner_cavity/LkCa_15_gap1"
+WORKDIR="/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/eqC1_gap/inner_cavity/LkCa_15_gap1"
 VENV="/nexus/posix0/MIA-astro-env/myben/vawelke/venvs/frank_env/bin/activate"
 CASA_BIN="/nexus/posix0/MIA-astro-env/myben/vawelke/software/casa-6.6.6-17-pipeline-2025.1.0.35-py3.10.el8/bin"
 export CASA_CONFIG="/nexus/posix0/MIA-astro-env/myben/vawelke/casa_config.py"
