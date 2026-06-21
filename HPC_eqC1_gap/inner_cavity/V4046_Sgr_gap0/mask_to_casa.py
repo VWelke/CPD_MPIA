@@ -1,0 +1,9 @@
+import os, sys
+import numpy as np
+
+sys.path.append(os.getcwd())
+
+target, gap_ix, subsuf = np.loadtxt('whichdisk.txt', dtype=str)
+
+importfits(target+'_gap'+gap_ix+'.'+subsuf+'.custom_mask.fits',
+           target+'_gap'+gap_ix+'.'+subsuf+'.custom.mask', overwrite=True)
