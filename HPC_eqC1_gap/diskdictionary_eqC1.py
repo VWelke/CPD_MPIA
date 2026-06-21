@@ -1,4 +1,4 @@
-# diskdictionary_eqC1.py
+﻿# diskdictionary_eqC1.py
 # rgap / wgap (= sigma_gap) from Eq. C1 brightness temperature profile fits
 #   fitted to the CLEAN radial profile (robust = -0.5, units mJy/beam)
 #   fit model: I(r) = I0*(r/0.1")^(-q) / (1 + Gamma)

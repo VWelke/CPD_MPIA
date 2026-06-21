@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 
 WORKDIR="/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/eqC1_gap/gap/LkCa_15_gap0"
 VENV="/nexus/posix0/MIA-astro-env/myben/vawelke/venvs/frank_env/bin/activate"
