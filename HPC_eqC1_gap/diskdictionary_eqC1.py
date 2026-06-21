@@ -25,7 +25,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.215mJy',
-        'dgap': [1.0, 44.0, 34.0, 94.0],
         'distance': 135,
         'dx': -0.00545897,
         'dy': 0.00482739,
@@ -42,6 +41,7 @@ disk = {
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.13565", sigma=0.04485", delta=6.505
         #   gap1: rgap=0.57",    sigma=0.12141", delta=200.0  [WARNING: hit upper bound]
+        'dgap': [6.50507, 200.0],
         'rgap': [0.13565, 0.57],
         'wgap': [0.04485, 0.12141],
         'rout': np.float64(0.8539673108605426),
@@ -59,7 +59,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.196mJy',
-        'dgap': [],
         'distance': 149,
         'dx': -0.00871044,
         'dy': 0.0009941,
@@ -74,6 +73,7 @@ disk = {
         'name': 'CQ_Tau',
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.04", sigma=0.05503", delta=15.228
+        'dgap': [15.2282],
         'rgap': [0.04],
         'wgap': [0.05503],
         'rout': np.float64(0.6461462387813894),
@@ -91,7 +91,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.182mJy',
-        'dgap': [8.0, 78.0, 92.0],
         'distance': 144,
         'dx': -0.00551499,
         'dy': -0.00658999,
@@ -107,6 +106,7 @@ disk = {
         'name': 'DM_Tau',
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.08", sigma=0.02847", delta=3.677  [inner cavity]
+        'dgap': [3.67652],
         'rgap': [0.08],
         'wgap': [0.02847],
         'rout': np.float64(0.8455571634694635),
@@ -124,7 +124,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.223mJy',
-        'dgap': [0.0, 47.0],
         'distance': 135,
         'dx': 0.0007974,
         'dy': -0.00320815,
@@ -141,6 +140,7 @@ disk = {
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.49531", sigma=0.039",   delta=1.624  [outer ring gap]
         #   gap1: rgap=0.09",    sigma=0.07899",  delta=25.133 [inner cavity]
+        'dgap': [1.62421, 25.13334],
         'rgap': [0.49531, 0.09],
         'wgap': [0.039, 0.07899],
         'rout': np.float64(0.0112374890595675),
@@ -158,7 +158,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.197mJy',
-        'dgap': [],
         'distance': 145,
         'dx': -0.07482211,
         'dy': -0.01666589,
@@ -173,6 +172,7 @@ disk = {
         'name': 'J1604',
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.36", sigma=0.05515", delta=46.030 [inner cavity]
+        'dgap': [46.0303],
         'rgap': [0.36],
         'wgap': [0.05515],
         'rout': np.float64(0.0118885850533845),
@@ -190,7 +190,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.179mJy',
-        'dgap': [49.0, 77.0, 97.0],
         'distance': 156,
         'dx': -0.04431726,
         'dy': -0.00588429,
@@ -207,6 +206,7 @@ disk = {
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.54", sigma=0.05492", delta=1.411  [outer ring gap]
         #   gap1: rgap=0.04", sigma=0.05178", delta=1.315  [inner cavity]
+        'dgap': [1.41114, 1.31547],
         'rgap': [0.54, 0.04],
         'wgap': [0.05492, 0.05178],
         'rout': np.float64(1.2796303443610049),
@@ -224,7 +224,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.173mJy',
-        'dgap': [1.0],
         'distance': 147,
         'dx': -0.02340882,
         'dy': 0.00190753,
@@ -240,6 +239,7 @@ disk = {
         'name': 'J1852',
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.17", sigma=0.04294", delta=34.615 [inner cavity]
+        'dgap': [34.61492],
         'rgap': [0.17],
         'wgap': [0.04294],
         'rout': np.float64(0.0123747196048515),
@@ -257,7 +257,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.172mJy',
-        'dgap': [2.0, 76.0],
         'distance': 156,
         'dx': -0.01684397,
         'dy': 0.02082818,
@@ -274,6 +273,7 @@ disk = {
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.56", sigma=0.03638", delta=1.213  [outer ring gap]
         #   gap1: rgap=0.06", sigma=0.06036", delta=11.574 [inner cavity]
+        'dgap': [1.21326, 11.57376],
         'rgap': [0.56, 0.06],
         'wgap': [0.03638, 0.06036],
         'rout': np.float64(0.0093515329062945),
@@ -291,7 +291,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.286mJy',
-        'dgap': [1.0, 77.0],
         'distance': 156,
         'dx': 0.02548176,
         'dy': 0.01841853,
@@ -308,6 +307,7 @@ disk = {
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.12",   sigma=0.04897", delta=32.360 [inner cavity]
         #   gap1: rgap=0.4034", sigma=0.04088", delta=1.298  [outer ring gap]
+        'dgap': [32.3602, 1.29829],
         'rgap': [0.12, 0.4034],
         'wgap': [0.04897, 0.04088],
         'rout': np.float64(0.012682148255406),
@@ -325,7 +325,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.272mJy',
-        'dgap': [4.0],
         'distance': 182,
         'dx': -0.01265537,
         'dy': 0.02815886,
@@ -341,6 +340,7 @@ disk = {
         'name': 'SY_Cha',
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.2", sigma=0.06493", delta=15.960 [inner cavity]
+        'dgap': [15.96036],
         'rgap': [0.2],
         'wgap': [0.06493],
         'rout': np.float64(0.07987987529486999),
@@ -358,7 +358,6 @@ disk = {
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
         'cthresh': '0.182mJy',
-        'dgap': [1.0, 1.0],
         'distance': 72,
         'dx': -0.05093653,
         'dy': -0.04518314,
@@ -375,6 +374,7 @@ disk = {
         # eqC1 fit (robust=-0.5 CLEAN profile):
         #   gap0: rgap=0.08",    sigma=0.03785", delta=4.232  [inner cavity]
         #   gap1: rgap=0.27754", sigma=0.03684", delta=6.208  [outer ring gap]
+        'dgap': [4.23241, 6.20796],
         'rgap': [0.08, 0.27754],
         'wgap': [0.03785, 0.03684],
         'rout': np.float64(1.0326922489331056),
