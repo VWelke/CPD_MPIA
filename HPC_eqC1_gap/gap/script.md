@@ -1,7 +1,12 @@
 # eqC1 gap/ — rsync + launch commands
 
+## 0. Fix BOM on HPC (one-time, for files already uploaded with BOM)
 
-find /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/eqC1_gap/gap -name "*.sh" | xargs sed -i 's/\r//'
+```bash
+# Remove UTF-8 BOM from all .sh and .py on HPC (safe to re-run)
+find /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/eqC1_gap -name "*.sh" -o -name "*.py" | \
+    xargs sed -i 's/^\xEF\xBB\xBF//'
+```
 
 
 ## 1. rsync (run from Ubuntu/WSL terminal)
@@ -37,3 +42,13 @@ for folder in HD_135344B_gap0 J1615_gap0 LkCa_15_gap0 MWC_758_gap1 V4046_Sgr_gap
     echo ""
 done
 ```
+
+
+### Out put
+
+for folder in HD_135344B_gap0 LkCa_15_gap0 MWC_758_gap1 V4046_Sgr_gap1 ; do
+    echo "--- $folder ---"
+    ls "${BASE}/${folder}/injections/" 2>/dev/null | head -3
+    tail -3 "${BASE}/${folder}/pipeline.log" 2>/dev/null
+    echo ""
+done

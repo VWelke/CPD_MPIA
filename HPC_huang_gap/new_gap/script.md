@@ -1,0 +1,47 @@
+# new_gap gap/ — rsync + launch commands
+
+
+## 1. rsync (run from Ubuntu/WSL terminal)
+
+```bash
+# push all new_gap scripts to HPC
+rsync -av --progress /mnt/d/CPD_MPIA/HPC_scripts/inj_rev/new_gap/ astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/new_gap/
+
+# push diskdictionary_newgap.py to Source_codes (where scripts import it from)
+rsync -av --progress /mnt/d/CPD_MPIA/HPC_scripts/Source_codes/diskdictionary_r90/diskdictionary_newgap.py astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/Source_codes/diskdictionary_r90/diskdictionary_newgap.py
+```
+
+## 2. Launch all 7 gap pipelines (run on HPC)
+
+```bash
+BASE="/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/new_gap"
+
+for folder in HD_135344B_gap0 J1615_gap0 LkCa_15_gap0 MWC_758_gap1 V4046_Sgr_gap1 AA_Tau_gap0 AA_Tau_gap1; do
+    echo "=== Launching $folder ==="
+    nohup bash "${BASE}/${folder}/run_pipeline.sh" > "${BASE}/${folder}/pipeline.log" 2>&1 &
+done
+```
+
+## 3. Check progress (run on HPC)
+
+```bash
+BASE="/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/new_gap"
+
+for folder in HD_135344B_gap0 J1615_gap0 LkCa_15_gap0 MWC_758_gap1 V4046_Sgr_gap1 AA_Tau_gap0 AA_Tau_gap1; do
+    echo "--- $folder ---"
+    ls "${BASE}/${folder}/injections/" 2>/dev/null | head -3
+    tail -3 "${BASE}/${folder}/pipeline.log" 2>/dev/null
+    echo ""
+done
+```
+
+## 4. rsync results back to local (run from Ubuntu/WSL terminal)
+
+```bash
+BASE_HPC="astronode1:/nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/new_gap"
+BASE_LOCAL="/mnt/d/CPD_MPIA/HPC_scripts/inj_rev/new_gap"
+
+for folder in HD_135344B_gap0 J1615_gap0 LkCa_15_gap0 MWC_758_gap1 V4046_Sgr_gap1 AA_Tau_gap0 AA_Tau_gap1; do
+    rsync -av --progress "${BASE_HPC}/${folder}/recoveries/" "${BASE_LOCAL}/${folder}/recoveries/"
+done
+```
