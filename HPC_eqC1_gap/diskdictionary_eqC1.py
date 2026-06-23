@@ -1,4 +1,4 @@
-# diskdictionary_eqC1.py
+﻿# diskdictionary_eqC1.py
 # rgap / wgap (= sigma_gap) from Eq. C1 brightness temperature profile fits
 #   fitted to the CLEAN radial profile (robust = -0.5, units mJy/beam)
 #   fit model: I(r) = I0*(r/0.1")^(-q) / (1 + Gamma)
@@ -58,7 +58,7 @@ disk = {
         'crobust': -0.5,
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
-        'cthresh': '0.196mJy',
+        'cthresh': '0.196mJy', # RMS is 39.13 mJy/beam, so 5-sigma is 0.196 mJy
         'distance': 149,
         'dx': -0.00871044,
         'dy': 0.0009941,
