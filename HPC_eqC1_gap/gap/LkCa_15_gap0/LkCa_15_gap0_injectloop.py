@@ -32,11 +32,10 @@ incl, PA = disk.disk[target]['incl'], disk.disk[target]['PA']
 offRA, offDEC = disk.disk[target]['dx'], disk.disk[target]['dy']
 geom = FixedGeometry(incl, PA, dRA=offRA, dDec=offDEC)
 
-# frank setup
-try:
-    Rmax = 2 * disk.disk[target]['rout']
-except KeyError:
-    Rmax = 2 * disk.disk[target]['R90']
+# frank setup — use whichever gives the larger Rmax (rout can be unreliable)
+rout = disk.disk[target].get('rout', 0)
+r90  = disk.disk[target].get('R90',  0)
+Rmax = 2 * max(rout, r90)
 Ncoll = disk.disk[target]['hyp-Ncoll']
 alpha, wsmth = disk.disk[target]['hyp-alpha'], disk.disk[target]['hyp-wsmth']
 FF = FrankFitter(Rmax=Rmax, N=Ncoll, geometry=geom, alpha=alpha,

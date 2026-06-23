@@ -1,5 +1,9 @@
 # eqC1 gap/ — rsync + launch commands
 
+
+find /nexus/posix0/MIA-astro-env/myben/vawelke/inj_rev/eqC1_gap/gap -name "*.sh" | xargs sed -i 's/\r//'
+
+
 ## 1. rsync (run from Ubuntu/WSL terminal)
 
 ```bash
