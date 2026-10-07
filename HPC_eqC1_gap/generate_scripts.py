@@ -82,10 +82,8 @@ offRA, offDEC = disk.disk[target]['dx'], disk.disk[target]['dy']
 geom = FixedGeometry(incl, PA, dRA=offRA, dDec=offDEC)
 
 # frank setup
-try:
-    Rmax = 2 * disk.disk[target]['rout']
-except KeyError:
-    Rmax = 2 * disk.disk[target]['R90']
+rout = disk.disk[target].get('rout', 0)
+Rmax = 2 * max(rout, disk.disk[target]['R90'])
 Ncoll = disk.disk[target]['hyp-Ncoll']
 alpha, wsmth = disk.disk[target]['hyp-alpha'], disk.disk[target]['hyp-wsmth']
 FF = FrankFitter(Rmax=Rmax, N=Ncoll, geometry=geom, alpha=alpha,
@@ -364,9 +362,12 @@ for i in range(len(Fstr)):
     rgap = disk.disk[target]['rgap'][gap]
     wgap = disk.disk[target]['wgap'][gap]
 
-    # Boolean mask: search annulus = rgap +/- wgap (= +/- 1 sigma)
+    # Boolean mask: search annulus = rgap +/- 0.5*wgap, matching injectloop.py's
+    # injection zone -- a wider search net picks up real disk features that no
+    # CPD was ever injected into, which get mistaken for the injected source
+    search_span = 0.5 * wgap
     mask = np.zeros_like(img, dtype='bool')
-    bndi, bndo = (rd >= (rgap - wgap)), (rd <= (rgap + wgap))
+    bndi, bndo = (rd >= (rgap - search_span)), (rd <= (rgap + search_span))
     mask[np.logical_and(bndi, bndo)] = 1
     g_img, g_xs, g_ys = img[mask], xs[mask], ys[mask]
     g_rd, g_azd = rd[mask], azd[mask]

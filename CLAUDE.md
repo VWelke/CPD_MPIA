@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Code Style
+
+Keep analysis/plotting code (scripts and notebook cells) as short and plain as possible — this is throwaway research code the user reads directly, not a library.
+
+- Only implement exactly what was asked. No extra plots, curves, diagnostics, or summary stats beyond the request.
+- No defensive guards (missing-file checks, empty-array checks, try/except) unless explicitly asked for. Assume inputs exist and are well-formed.
+- No helper functions/abstractions for something used once.
+- Prefer a single flat cell/script over splitting into many small pieces.
+
 ## Project Purpose
 
 **CPD_MPIA** is a research project analyzing Circumplanetary Disk (CPD) signals in ALMA radio observations from the DSHARP survey (15 protoplanetary disks). The core workflow is: load FITS residual images → compute per-pixel SNR maps → compare against theoretical CPD emission models → run injection-recovery tests to establish detection limits → constrain planetary mass.

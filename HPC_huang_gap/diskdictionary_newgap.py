@@ -1,14 +1,17 @@
-﻿# diskdictionary_eqC1.py
-# rgap / wgap (= sigma_gap) from Eq. C1 brightness temperature profile fits
-#   fitted to the CLEAN radial profile (robust = -0.5, units mJy/beam)
-#   fit model: I(r) = I0*(r/0.1")^(-q) / (1 + Gamma)
-#              Gamma = (delta-1)*exp[-0.5*((r-r_gap)/sigma_gap)^2]
-#   wgap stored here is sigma_gap (Gaussian half-width of the depletion)
-#   injection zone = r_gap +/- 1*sigma_gap  (ZONE_NSIGMA = 1)
+# diskdictionary_newgap.py
+# rgap / wgap from manual visual click in Injection_Recovery_Revised/new_gap.ipynb
+#   rgap = gap_dip r_arcsec (first click on the gap minimum)
+#   wgap = outer_edge - inner_edge  (arcsec; full width of the injection zone)
+#   injection zone = [rgap - 0.5*wgap, rgap + 0.5*wgap]   (covers [inner_edge, outer_edge])
+#   recovery search annulus = [rgap - wgap, rgap + wgap]   (2x wider than injection zone)
 #
-# Imaging parameters (crobust, RMS, cthresh, gthresh, rout) from
-#   diskdictionaryrm0_5.py  (robust = -0.5)
-# All other geometry parameters (PA, incl, cmask, dx, dy, ...) unchanged.
+# Click data saved in:  Injection_Recovery_Revised/gap_clicks.csv
+# Gap fitting notebook: Injection_Recovery_Revised/new_gap.ipynb
+#
+# Imaging parameters (crobust, RMS, cthresh, rout, gscales) unchanged
+#   from diskdictionary_eqC1.py / diskdictionaryrm0_5.py.
+# gthresh = 2 × RMS for all disks (CQ_Tau and J1604 were missing this in eqC1).
+# All geometry parameters (PA, incl, dx, dy, cmask, ...) unchanged.
 
 import numpy as np
 
@@ -29,7 +32,7 @@ disk = {
         'dx': -0.00545897,
         'dy': 0.00482739,
         'gscales': [0, 5],
-        'gthresh': '0.086mJy',
+        'gthresh': '0.086mJy', 
         'hyp-Ncoll': 300,
         'hyp-alpha': 1.3,
         'hyp-wsmth': 0.1,
@@ -38,18 +41,11 @@ disk = {
         'lstar': 1.1,
         'mstar': 0.79,
         'name': 'AA_Tau',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.13565", sigma=0.04485", delta=6.505
-        #   gap1: rgap=0.57",    sigma=0.12141", delta=200.0  [WARNING: hit upper bound]
-        # rkink/wkink: kink-candidate position, kept separate from the real eqC1 gaps.
-        #   rkink = Pinte+2025 Table 2 r_planet (au) / distance (arcsec), same as CANDIDATE_R in the
-        #   kink folders (azimuth: CANDIDATE_AZ, from the Figure 5 blue dot, verify_figure5_blue_dot.ipynb).
-        #   wkink is only a mask-sizing radius (0.5x beam) for custom_mask(..., feature='kink').
-        'dgap': [6.50507, 200.0],
-        'rgap': [0.13565, 0.57],
-        'wgap': [0.04485, 0.12141],
-        'rkink': [0.5926],
-        'wkink': [0.0316],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.13", inner=0.05", outer=0.23"  → outer ring gap
+        #   gap1: gap_dip=0.57", inner=0.51", outer=0.61"  → outer ring gap
+        'rgap': [0.13, 0.57],
+        'wgap': [0.18, 0.10],
         'rout': np.float64(0.8539673108605426),
     },
 
@@ -64,7 +60,7 @@ disk = {
         'crobust': -0.5,
         'cscale': [0, 8, 15, 30, 80],
         'ctaper': [],
-        'cthresh': '0.196mJy', # RMS is 39.13 mJy/beam, so 5-sigma is 0.196 mJy
+        'cthresh': '0.196mJy',
         'distance': 149,
         'dx': -0.00871044,
         'dy': 0.0009941,
@@ -78,11 +74,10 @@ disk = {
         'lstar': 10,
         'mstar': 1.4,
         'name': 'CQ_Tau',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.04", sigma=0.05503", delta=15.228
-        'dgap': [15.2282],
-        'rgap': [0.04],
-        'wgap': [0.05503],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.05", inner=0.01", outer=0.09"  → inner cavity
+        'rgap': [0.05],
+        'wgap': [0.08],
         'rout': np.float64(0.6461462387813894),
     },
 
@@ -111,12 +106,11 @@ disk = {
         'lstar': 0.24,
         'mstar': 0.45,
         'name': 'DM_Tau',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.08",  sigma=0.02847", delta=3.677   [inner cavity]
-        #   gap1: rgap=0.48",  sigma=0.05021", delta=1.484   [outer ring gap ~70 AU]
-        'dgap': [3.67652, 1.48446],
-        'rgap': [0.08, 0.48],
-        'wgap': [0.02847, 0.05021],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.07", inner=0.05", outer=0.11"  → inner cavity
+        #   gap1: gap_dip=0.49", inner=0.47", outer=0.57"  → outer ring gap (~70 AU)
+        'rgap': [0.07, 0.49],
+        'wgap': [0.06, 0.10],
         'rout': np.float64(0.8455571634694635),
     },
 
@@ -145,23 +139,11 @@ disk = {
         'lstar': 6.7,
         'mstar': 1.61,
         'name': 'HD_135344B',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.49531", sigma=0.039",   delta=1.624  [outer ring gap]
-        #   gap1: rgap=0.09",    sigma=0.07899",  delta=25.133 [inner cavity]
-        # indices 2-4: NOT eqC1 gap fits -- fixed point-candidate positions from
-        # Table 1 (CO-tracer planet candidates C1, C2, DF), used only so the
-        # existing custom_mask/injectloop/recover_loop machinery (which is
-        # written around a rgap/wgap zone) can size a CASA clean mask and
-        # injection point per candidate. wgap here is just a mask-sizing
-        # radius, not a fitted gap width -- see HD_135344B_C1/C2/DF folders,
-        # where injectloop.py overrides r_cpd/az_cpd to the exact candidate
-        # position rather than drawing from this zone.
-        #   C1: R=0.30", phi=36deg    (41 au,  36deg)
-        #   C2: R=0.54", phi=15deg    (73 au,  15deg)
-        #   DF: R=0.69", phi=-133deg  (95 au, -133deg)
-        'dgap': [1.62421, 25.13334, 1.0, 1.0, 1.0],
-        'rgap': [0.49531, 0.09, 0.30, 0.54, 0.69],
-        'wgap': [0.039, 0.07899, 0.03, 0.03, 0.03],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.51", inner=0.47", outer=0.55"  → outer ring gap
+        #   gap1: gap_dip=0.11", inner=0.03", outer=0.21"  → inner cavity
+        'rgap': [0.51, 0.11],
+        'wgap': [0.08, 0.18],
         'rout': np.float64(0.0112374890595675),
     },
 
@@ -190,11 +172,10 @@ disk = {
         'lstar': 0.76,
         'mstar': 1.29,
         'name': 'J1604',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.36", sigma=0.05515", delta=46.030 [inner cavity]
-        'dgap': [46.0303],
-        'rgap': [0.36],
-        'wgap': [0.05515],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.37", inner=0.33", outer=0.41"  → inner cavity
+        'rgap': [0.37],
+        'wgap': [0.08],
         'rout': np.float64(0.0118885850533845),
     },
 
@@ -223,62 +204,12 @@ disk = {
         'lstar': 1.07,
         'mstar': 1.14,
         'name': 'J1615',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.54", sigma=0.05492", delta=1.411  [outer ring gap]
-        #   gap1: rgap=0.04", sigma=0.05178", delta=1.315  [inner cavity]
-        # rkink/wkink: kink-candidate position, kept separate from the real eqC1 gaps.
-        #   rkink = Pinte+2025 Table 2 r_planet (au) / distance (arcsec), same as CANDIDATE_R in the
-        #   kink folders (azimuth: CANDIDATE_AZ, from the Figure 5 blue dot, verify_figure5_blue_dot.ipynb).
-        #   wkink is only a mask-sizing radius (0.5x beam) for custom_mask(..., feature='kink').
-        'dgap': [1.41114, 1.31547],
-        'rgap': [0.54, 0.04],
-        'wgap': [0.05492, 0.05178],
-        'rkink': [1.9872],
-        'wkink': [0.0450],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.55", inner=0.53", outer=0.61"  → outer ring gap
+        #   gap1: gap_dip=0.05", inner=0.01", outer=0.09"  → inner cavity
+        'rgap': [0.55, 0.05],
+        'wgap': [0.08, 0.08],
         'rout': np.float64(1.2796303443610049),
-    },
-
-    'J1842': {
-        'PA': 26.35016474,
-        'R90': np.float64(0.5645),
-        'RMS': np.float64(43.370182),
-        'ccycleniter': 300,
-        'cgain': 0.3,
-        'cmask': 'ellipse[[18:42:57.981, -35:32:42.827], [2arcsec, '
-                 '1.549481012108344arcsec], 26.35016474deg]',
-        'crobust': -0.5,
-        'cscale': [0, 8, 15, 30, 80],
-        'ctaper': [],
-        'cthresh': '0.217mJy',   # 5 x RMS
-        'distance': 151,
-        'dx': -0.00316491,
-        'dy': -0.03068915,
-        'gscales': [0, 5],
-        'gthresh': '0.087mJy',   # 2 x RMS
-        'hyp-Ncoll': 300,
-        'hyp-alpha': 1.3,
-        'hyp-wsmth': 0.1,
-        'incl': 39.21848812,
-        'label': 'J1842',
-        'lstar': 0.8,
-        'mstar': 1.07,
-        'name': 'J1842',
-        # No eqC1 gap fit exists for J1842 yet -- this disk was never part of
-        # the gap/inner_cavity injection-recovery batches. Added here only to
-        # support the kink-candidate injection-recovery test (rkink/wkink below).
-        # PA/incl/dx/dy: galario fit (J1842_geometrical_parameters_continuum_galario.txt)
-        # RMS: measured from images_data_different_robust robust=-0.5 image (r>3" annulus)
-        # R90: from J1842_continuum_radii.txt; rout: no frank fit available, R90 used as fallback
-        # rkink/wkink: kink-candidate position, kept separate from the real eqC1 gaps.
-        #   rkink = Pinte+2025 Table 2 r_planet (au) / distance (arcsec), same as CANDIDATE_R in the
-        #   kink folders (azimuth: CANDIDATE_AZ, from the Figure 5 blue dot, verify_figure5_blue_dot.ipynb).
-        #   wkink is only a mask-sizing radius (0.5x beam) for custom_mask(..., feature='kink').
-        'dgap': [],
-        'rgap': [],
-        'wgap': [],
-        'rkink': [0.6954],
-        'wkink': [0.0416],
-        'rout': np.float64(0.5645),
     },
 
     'J1852': {
@@ -306,11 +237,10 @@ disk = {
         'lstar': 0.6,
         'mstar': 1.03,
         'name': 'J1852',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.17", sigma=0.04294", delta=34.615 [inner cavity]
-        'dgap': [34.61492],
-        'rgap': [0.17],
-        'wgap': [0.04294],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.19", inner=0.15", outer=0.23"  → inner cavity
+        'rgap': [0.19],
+        'wgap': [0.08],
         'rout': np.float64(0.0123747196048515),
     },
 
@@ -339,18 +269,11 @@ disk = {
         'lstar': 1,
         'mstar': 1.14,
         'name': 'LkCa_15',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.56", sigma=0.03638", delta=1.213  [outer ring gap]
-        #   gap1: rgap=0.06", sigma=0.06036", delta=11.574 [inner cavity]
-        # rkink/wkink: kink-candidate position, kept separate from the real eqC1 gaps.
-        #   rkink = Pinte+2025 Table 2 r_planet (au) / distance (arcsec), same as CANDIDATE_R in the
-        #   kink folders (azimuth: CANDIDATE_AZ, from the Figure 5 blue dot, verify_figure5_blue_dot.ipynb).
-        #   wkink is only a mask-sizing radius (0.5x beam) for custom_mask(..., feature='kink').
-        'dgap': [1.21326, 11.57376],
-        'rgap': [0.56, 0.06],
-        'wgap': [0.03638, 0.06036],
-        'rkink': [1.5385],
-        'wkink': [0.0332],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.57", inner=0.55", outer=0.59"  → outer ring gap
+        #   gap1: gap_dip=0.07", inner=0.03", outer=0.11"  → inner cavity
+        'rgap': [0.57, 0.07],
+        'wgap': [0.04, 0.08],
         'rout': np.float64(0.0093515329062945),
     },
 
@@ -379,12 +302,11 @@ disk = {
         'lstar': 10.4,
         'mstar': 1.4,
         'name': 'MWC_758',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.12",   sigma=0.04897", delta=32.360 [inner cavity]
-        #   gap1: rgap=0.4034", sigma=0.04088", delta=1.298  [outer ring gap]
-        'dgap': [32.3602, 1.29829],
-        'rgap': [0.12, 0.4034],
-        'wgap': [0.04897, 0.04088],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.13", inner=0.09", outer=0.17"  → inner cavity
+        #   gap1: gap_dip=0.41", inner=0.39", outer=0.47"  → outer ring gap
+        'rgap': [0.13, 0.41],
+        'wgap': [0.08, 0.08],
         'rout': np.float64(0.012682148255406),
     },
 
@@ -413,17 +335,10 @@ disk = {
         'lstar': 0.55,
         'mstar': 0.77,
         'name': 'SY_Cha',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.2", sigma=0.06493", delta=15.960 [inner cavity]
-        # rkink/wkink: kink-candidate position, kept separate from the real eqC1 gaps.
-        #   rkink = Pinte+2025 Table 2 r_planet (au) / distance (arcsec), same as CANDIDATE_R in the
-        #   kink folders (azimuth: CANDIDATE_AZ, from the Figure 5 blue dot, verify_figure5_blue_dot.ipynb).
-        #   wkink is only a mask-sizing radius (0.5x beam) for custom_mask(..., feature='kink').
-        'dgap': [15.96036],
-        'rgap': [0.2],
-        'wgap': [0.06493],
-        'rkink': [0.7692],
-        'wkink': [0.0396],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.19", inner=0.11", outer=0.27"  → ring gap
+        'rgap': [0.19],
+        'wgap': [0.16],
         'rout': np.float64(0.07987987529486999),
     },
 
@@ -452,12 +367,11 @@ disk = {
         'lstar': 0.5,
         'mstar': 1.73,
         'name': 'V4046_Sgr',
-        # eqC1 fit (robust=-0.5 CLEAN profile):
-        #   gap0: rgap=0.08",    sigma=0.03785", delta=4.232  [inner cavity]
-        #   gap1: rgap=0.27754", sigma=0.03684", delta=6.208  [outer ring gap]
-        'dgap': [4.23241, 6.20796],
-        'rgap': [0.08, 0.27754],
-        'wgap': [0.03785, 0.03684],
+        # manual click (new_gap.ipynb):
+        #   gap0: gap_dip=0.09", inner=0.05", outer=0.13"  → inner cavity
+        #   gap1: gap_dip=0.27", inner=0.19", outer=0.35"  → outer ring gap
+        'rgap': [0.09, 0.27],
+        'wgap': [0.08, 0.16],
         'rout': np.float64(1.0326922489331056),
     },
 }

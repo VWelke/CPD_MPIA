@@ -91,3 +91,11 @@ __pycache__/
 *.ipynb_checkpoints/
 *.vscode/
 *.idea/
+
+# ===============================
+# Generated repeat-run pipeline folders (reproducible via generate_reps.py
+# from the base disk/gap folder -- not worth tracking individually), plus
+# one-off sibling test folders (e.g. *_finegrid) generated the same way
+# ===============================
+**/*_rep[1-9]/
+**/*_finegrid/

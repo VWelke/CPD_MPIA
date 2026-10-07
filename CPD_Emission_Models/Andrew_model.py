@@ -345,6 +345,7 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
                   color='Spectral', y_max=0.8, y_min=0.05,x_min = -1.5, x_max =1,
                   sigma_ujy=None, det_sigma=None,
                   min=-5.5, max=-3.2,
+                  gap_boundary_au=None,
                   ax=None):
 
     import matplotlib.pyplot as plt
@@ -382,6 +383,13 @@ def plot_flux_map(Mp_grid, Rout_frac_grid, Flux_vals, M_cpd_chosen,
     
     # ============= detection limit contours ==================
     ax.plot(np.log10(Mp_grid), Rout_frac_beam, color='purple', linestyle='-.', lw=3, label='_nolegend_')
+
+    # ============= R_cpd > gap boundary (2*sigma_gap) hatch ==================
+    if gap_boundary_au is not None:
+        Rout_frac_gapbound = gap_boundary_au / RHill_arr
+        ax.fill_between(np.log10(Mp_grid), Rout_frac_gapbound, y_max,
+                         facecolor='none', edgecolor='black', hatch='xx', lw=0,
+                         label='_nolegend_')
 
 
     # add value for range of Mdot from smallest to largest Mp to 

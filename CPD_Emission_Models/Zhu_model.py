@@ -372,20 +372,18 @@ def plot_zhu_Mp_Mdot_flux(
     #        )
     
 
-    # 5. Sigma detection contours
-    sigma_ujy = target_flux_arr[0]
-    sigma_levels = [3, 5 ]
-    flux_levels = [n * sigma_ujy for n in sigma_levels]
+    # 5. 50%-recovery flux (F50) detection contour
+    F50_ujy = target_flux_arr[0]
     cs = ax.contour(
         LOGMP, LOGMDOT, Flux_vals,
-        levels=flux_levels,
+        levels=[F50_ujy],
         colors="brown",
         linestyles="dashed",
         linewidths=2
     )
     ax.clabel(
         cs,
-        fmt={lvl: f"{n}σ" for lvl, n in zip(flux_levels, sigma_levels)},
+        fmt={F50_ujy: "F50"},
         fontsize=rcParams['font.size'] * 0.9  # <-- USE rcParams
     )
 
@@ -651,15 +649,13 @@ def plot_zhu_Mp_alpha_flux(
         cbar = plt.colorbar(cf, ax=ax)
         cbar.set_label(r"$\log_{10}(F_\nu\, [\mu{\rm Jy}])$", fontsize=rcParams['font.size'])
 
-    # detection contours
-    sigma_ujy = target_flux_arr[0]
-    sigma_levels = [3, 5]
-    flux_levels = [n * sigma_ujy for n in sigma_levels]
+    # 50%-recovery flux (F50) detection contour
+    F50_ujy = target_flux_arr[0]
     cs = ax.contour(
         LOGMP_MESH, LOGALPHA_MESH, Flux_vals,
-        levels=flux_levels, colors="brown", linestyles="dashed", linewidths=2
+        levels=[F50_ujy], colors="brown", linestyles="dashed", linewidths=2
     )
-    ax.clabel(cs, fmt={lvl: f"{n}σ" for lvl, n in zip(flux_levels, sigma_levels)},
+    ax.clabel(cs, fmt={F50_ujy: "F50"},
               fontsize=rcParams['font.size'] * 0.9)
 
     ax.set_xlabel(r"$\log_{10}(M_p/M_{\rm Jup})$", fontsize=rcParams['font.size'])
