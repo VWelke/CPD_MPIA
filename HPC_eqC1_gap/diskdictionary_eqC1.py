@@ -165,6 +165,74 @@ disk = {
         'rout': np.float64(0.0112374890595675),
     },
 
+    'HD_143006': {
+        'PA': 7.53236754,
+        'R90': np.float64(0.4778),
+        'RMS': np.float64(45.40990266832523),
+        'ccycleniter': 300,
+        'cgain': 0.3,
+        'cmask': 'ellipse[[15:58:36.913, -22:57:15.221], [2arcsec, '
+                 '1.8944886188220467arcsec], 7.53236754deg]',
+        'crobust': -0.5,
+        'cscale': [0, 8, 15, 30, 80],
+        'ctaper': [],
+        'cthresh': '0.227mJy',
+        'distance': 167,
+        'dx': 0.00826703,
+        'dy': 0.02642291,
+        'gscales': [0, 5],
+        'gthresh': '0.091mJy',
+        'hyp-Ncoll': 300,
+        'hyp-alpha': 1.3,
+        'hyp-wsmth': 0.1,
+        'incl': 18.69391735,
+        'label': 'HD 143006',
+        'lstar': 3.8,
+        'mstar': 1.56,
+        'name': 'HD_143006',
+        # eqC1 fit (robust=-0.5 CLEAN profile):
+        #   gap0: rgap=0.13935", sigma=0.03495", delta=3.167  [gap between inner disk and 0.25" ring]
+        #   gap1: rgap=0.31635", sigma=0.02283", delta=1.111  [shallow; fitted with q<0 since the
+        #         0.39" ring is brighter than the 0.25" ring]
+        'dgap': [3.16653, 1.11104],
+        'rgap': [0.13935, 0.31635],
+        'wgap': [0.03495, 0.02283],
+        'rout': np.float64(0.573863300494785),
+    },
+
+    'HD_34282': {
+        'PA': 117.79519232,
+        'R90': np.float64(0.7759),
+        'RMS': np.float64(39.72522608819418),
+        'ccycleniter': 300,
+        'cgain': 0.3,
+        'cmask': 'ellipse[[05:16:00.477, -09:48:35.394], [2arcsec, '
+                 '1.005527473149872arcsec], 117.79519232deg]',
+        'crobust': -0.5,
+        'cscale': [0, 8, 15, 30, 80],
+        'ctaper': [],
+        'cthresh': '0.199mJy',
+        'distance': 309,
+        'dx': 0.01282042,
+        'dy': 0.00837812,
+        'gscales': [0, 5],
+        'gthresh': '0.079mJy',
+        'hyp-Ncoll': 300,
+        'hyp-alpha': 1.3,
+        'hyp-wsmth': 0.1,
+        'incl': 59.81698359,
+        'label': 'HD 34282',
+        'lstar': 108,
+        'mstar': 1.61,
+        'name': 'HD_34282',
+        # eqC1 fit (robust=-0.5 CLEAN profile):
+        #   gap0: rgap=0.05", sigma=0.04354", delta=4.525  [inner cavity, beam_0.5fwhm convention]
+        'dgap': [4.52491],
+        'rgap': [0.05],
+        'wgap': [0.04354],
+        'rout': np.float64(0.008326621726155),
+    },
+
     'J1604': {
         'PA': 123.24221853,
         'R90': np.float64(0.7776),

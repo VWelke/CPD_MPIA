@@ -29,8 +29,8 @@ Rgas = 8.314e7  # erg/(mol K)
 # Load pre-calculated relations
 # ============================
 
-Lp_from_Mp = load('d:/CPD_MPIA/utils/Lp_from_Mp.pkl')
-Rp_from_Mp = load('d:/CPD_MPIA/utils/Rp_from_Mp.pkl')
+Lp_from_Mp = load('E:/CPD_MPIA/utils/Lp_from_Mp.pkl')
+Rp_from_Mp = load('E:/CPD_MPIA/utils/Rp_from_Mp.pkl')
 
 
 def B_nu(nu, T):
@@ -230,7 +230,9 @@ def compute_flux_map(
     # === Optional caching ===
     save_dir = "Andrews"
     os.makedirs(save_dir, exist_ok=True)
-    fname = f"{disk_arr[0]}_{rp}_alpha{alpha}_{mode}.csv"
+    # "_mdotMp": accretion rate scales with planet mass (Mdot = Mp / 1 Myr, see compute_cell); earlier caches used a
+    # fixed Mdot = 1.56 Mjup/Myr and are kept under their old names
+    fname = f"{disk_arr[0]}_{rp}_alpha{alpha}_{mode}_mdotMp.csv"
     save_path = os.path.join(save_dir, fname)
 
     if save and os.path.exists(save_path) and not overwrite:
@@ -269,9 +271,11 @@ def compute_flux_map(
                 return (i, j, 0.0, 0.0)
 
             # --- Iterate through CPD masses until flux threshold reached ---
+            # accretion rate scales with planet mass, Mdot = Mp / 1 Myr: Mp is in Mjup and Mdot in Mjup/Myr, so Mdot = Mp
+            # (previously Mdot was left at its fixed default of 1.56 Mjup/Myr for every Mp)
             for M_cpd in M_cpd_grid:
                 out = calculate_disk_properties_Andrews(
-                    M_star=disk_arr[1], Mp=Mp, alpha=alpha,
+                    M_star=disk_arr[1], Mp=Mp, Mdot=Mp, alpha=alpha,
                     Rin=1, rp=rp, d_pc=disk_arr[2],
                      Lstar=disk_arr[3],
                     Rout=Rout, M_cpd=M_cpd, inc=inc, lam_nu=lam_nu

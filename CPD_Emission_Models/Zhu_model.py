@@ -47,8 +47,8 @@ Rgas       = 8.314e7             # erg mol^-1 K^-1  (used in Zhu eq. 6 and 7)
 # Load pre-calculated relations
 # ============================
 
-Lp_from_Mp = load('d:/CPD_MPIA/utils/Lp_from_Mp.pkl')
-Rp_from_Mp = load('d:/CPD_MPIA/utils/Rp_from_Mp.pkl')
+Lp_from_Mp = load('E:/CPD_MPIA/utils/Lp_from_Mp.pkl')
+Rp_from_Mp = load('E:/CPD_MPIA/utils/Rp_from_Mp.pkl')
 
 
 # ============================
